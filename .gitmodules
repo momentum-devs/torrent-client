@@ -1,0 +1,15 @@
+[submodule "externals/googletest"]
+	path = externals/googletest
+	url = https://github.com/google/googletest.git
+[submodule "externals/fmt"]
+	path = externals/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "externals/bencode"]
+	path = externals/bencode
+	url = https://github.com/fbdtemme/bencode.git
+[submodule "externals/gsl-lite"]
+	path = externals/gsl-lite
+	url = https://github.com/gsl-lite/gsl-lite.git
+[submodule "externals/expected-lite"]
+	path = externals/expected-lite
+	url = https://github.com/martinmoene/expected-lite.git
