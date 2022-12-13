@@ -1,9 +1,9 @@
 set(SOURCES
         FileSystemService.cpp
+        TorrentFileParserImpl.cpp
         )
 
 set(UT_SOURCES
-        FileSystemServiceTest.cpp
         )
 
 add_executable(${PROJECT_NAME} Main.cpp ${SOURCES})
