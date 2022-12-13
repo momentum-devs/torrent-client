@@ -1,4 +1,4 @@
 find_package(Boost REQUIRED)
 
 add_subdirectory(googletest)
-add_subdirectory(bencode)
+add_subdirectory(fmt)

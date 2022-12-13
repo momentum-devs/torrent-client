@@ -11,7 +11,7 @@ add_executable(${PROJECT_NAME} Main.cpp ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC fmt)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${GMOCK_INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC ${GMOCK_INCLUDE_DIR} ${BENCODE_INCLUDE_DIR})
 
 add_executable(${PROJECT_NAME}UT ${UT_SOURCES} ${SOURCES})
 
