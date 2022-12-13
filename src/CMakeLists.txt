@@ -1,9 +1,10 @@
 set(SOURCES
         FileSystemService.cpp
+        UdpClientImpl.cpp
         )
 
 set(UT_SOURCES
-        FileSystemServiceTest.cpp
+        UdpClientImplTest.cpp
         )
 
 add_executable(${PROJECT_NAME} Main.cpp ${SOURCES})
