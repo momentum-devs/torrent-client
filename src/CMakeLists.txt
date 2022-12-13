@@ -1,9 +1,9 @@
 set(SOURCES
-        Main.cpp
+        FileSystemService.cpp
         )
 
 set(UT_SOURCES
-        Main.cpp
+        FileSystemServiceTest.cpp
         )
 
 add_executable(${PROJECT_NAME} Main.cpp ${SOURCES})
