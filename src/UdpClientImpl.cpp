@@ -3,18 +3,29 @@
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/buffer.hpp>
+#include <iostream>
 
 std::string UdpClientImpl::receiveData(const std::string& address, unsigned short port)
 {
-    boost::asio::io_service ioService;
-    boost::asio::ip::udp::endpoint updEndpoint(boost::asio::ip::address::from_string("0.0.0.0"), 10114);
-    boost::asio::ip::udp::socket udpSocket(ioService, updEndpoint);
+    try
+    {
+        boost::asio::io_context io_context;
+        boost::asio::ip::udp::socket socket(io_context, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 6969));
 
-    std::vector<char> buffer(128);
+        for (;;)
+        {
+            boost::array<char, 1> outputBuffer;
+            boost::asio::ip::udp::endpoint remote_endpoint{};
+            socket.receive_from(boost::asio::buffer(outputBuffer), remote_endpoint);
 
-    udpSocket.receive_from(boost::asio::buffer(buffer,8), updEndpoint);
+            boost::system::error_code ignored_error;
+            socket.send_to(boost::asio::buffer("x"), remote_endpoint, 0, ignored_error);
+        }
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
 
-    std::string data(buffer.begin(), buffer.end());
-
-    return data;
+    return "x";
 }

@@ -5,8 +5,6 @@ project(${PROJECT_NAME} CXX)
 
 add_subdirectory(externals)
 
-find_package(bencode REQUIRED)
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_DEBUG)
 

@@ -7,3 +7,6 @@
 [submodule "externals/bencode.hpp"]
 	path = externals/bencode.hpp
 	url = https://github.com/jimporter/bencode.hpp.git
+[submodule "externals/cpr"]
+	path = externals/cpr
+	url = https://github.com/libcpr/cpr.git
