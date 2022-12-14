@@ -1,5 +1,6 @@
 set(SOURCES
         FileSystemService.cpp
+        TorrentFileParserImpl.cpp
         PeerRetrieverImpl.cpp
         )
 
