@@ -6,6 +6,7 @@ set(SOURCES
         GetProjectPath.cpp
         StringHelper.cpp
         HexEncoder.cpp
+        PeerIdGenerator.cpp
         )
 
 set(UT_SOURCES
