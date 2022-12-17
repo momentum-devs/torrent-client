@@ -2,10 +2,10 @@
 
 #include "gtest/gtest.h"
 
-#include "FileSystemServiceImpl.h"
-#include "GetProjectPath.h"
 #include "errors/InvalidBencodeFileFormatError.h"
 #include "errors/MissingTorrentInfo.h"
+#include "FileSystemServiceImpl.h"
+#include "GetProjectPath.h"
 
 using namespace ::testing;
 
@@ -53,7 +53,8 @@ TEST_F(TorrentFileDeserializerImplTest, deserializeTorrentFile)
 
 TEST_F(TorrentFileDeserializerImplTest, givenTorrentFileWithoutAnnounceField_throwsAnError)
 {
-    ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutAnnounceFieldContent), errors::MissingTorrentInfo);
+    ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutAnnounceFieldContent),
+                 errors::MissingTorrentInfo);
 }
 
 TEST_F(TorrentFileDeserializerImplTest, givenTorrentFileWithoutInfoField_throwsAnError)
@@ -73,7 +74,8 @@ TEST_F(TorrentFileDeserializerImplTest, givenTorrentFileWithoutNameField_throwsA
 
 TEST_F(TorrentFileDeserializerImplTest, givenTorrentFileWithoutPieceLengthField_throwsAnError)
 {
-    ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutPieceLengthFieldContent), errors::MissingTorrentInfo);
+    ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutPieceLengthFieldContent),
+                 errors::MissingTorrentInfo);
 }
 
 TEST_F(TorrentFileDeserializerImplTest, givenTorrentFileWithoutPiecesField_throwsAnError)
