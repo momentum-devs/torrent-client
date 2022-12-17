@@ -1,4 +1,4 @@
-#include "TorrentFileParserImpl.h"
+#include "TorrentFileDeserializerImpl.h"
 
 #include <boost/compute/detail/sha1.hpp>
 
@@ -7,7 +7,7 @@
 #include "errors/MissingTorrentInfo.h"
 #include "TorrentFileInfo.h"
 
-TorrentFileInfo TorrentFileParserImpl::parse(std::string torrentFileContent)
+TorrentFileInfo TorrentFileDeserializerImpl::deserialize(const std::string& torrentFileContent)
 {
     bencode::data bencodeData;
 
@@ -17,7 +17,7 @@ TorrentFileInfo TorrentFileParserImpl::parse(std::string torrentFileContent)
     }
     catch (const std::exception& e)
     {
-        throw BencodeParseError(e.what());
+        throw errors::BencodeParseError(e.what());
     }
 
     bencode::dict torrentDict;
@@ -28,7 +28,7 @@ TorrentFileInfo TorrentFileParserImpl::parse(std::string torrentFileContent)
     }
     catch (const std::exception& e)
     {
-        throw MissingTorrentInfo(e.what());
+        throw errors::MissingTorrentInfo(e.what());
     }
 
     auto announce = getAnnounce(torrentDict);
@@ -39,7 +39,7 @@ TorrentFileInfo TorrentFileParserImpl::parse(std::string torrentFileContent)
 
     return {announce, infoHash, torrentSize};
 }
-std::string TorrentFileParserImpl::getAnnounce(bencode::dict& dict)
+std::string TorrentFileDeserializerImpl::getAnnounce(bencode::dict& dict)
 {
     std::string announce;
     try
@@ -48,13 +48,13 @@ std::string TorrentFileParserImpl::getAnnounce(bencode::dict& dict)
     }
     catch (const std::exception& e)
     {
-        throw MissingTorrentInfo(e.what());
+        throw errors::MissingTorrentInfo(e.what());
     }
 
     return announce;
 }
 
-std::string TorrentFileParserImpl::getInfoHash(bencode::dict& dict)
+std::string TorrentFileDeserializerImpl::getInfoHash(bencode::dict& dict)
 {
     bencode::data info;
 
@@ -64,7 +64,7 @@ std::string TorrentFileParserImpl::getInfoHash(bencode::dict& dict)
     }
     catch (const std::exception& e)
     {
-        throw MissingTorrentInfo(e.what());
+        throw errors::MissingTorrentInfo(e.what());
     }
 
     auto infoText = bencode::encode(info);
@@ -78,7 +78,7 @@ std::string TorrentFileParserImpl::getInfoHash(bencode::dict& dict)
     return infoHash;
 }
 
-long long TorrentFileParserImpl::getTorrentSize(bencode::dict& dict)
+long long TorrentFileDeserializerImpl::getTorrentSize(bencode::dict& dict)
 {
     bencode::data info;
 
@@ -88,7 +88,7 @@ long long TorrentFileParserImpl::getTorrentSize(bencode::dict& dict)
     }
     catch (const std::exception& e)
     {
-        throw MissingTorrentInfo(e.what());
+        throw errors::MissingTorrentInfo(e.what());
     }
 
     long long fileSizeSum = 0;
@@ -103,7 +103,7 @@ long long TorrentFileParserImpl::getTorrentSize(bencode::dict& dict)
     }
     catch (const std::exception& e)
     {
-        throw MissingTorrentInfo(e.what());
+        throw errors::MissingTorrentInfo(e.what());
     }
 
     for(const auto& file : files)
@@ -118,7 +118,7 @@ long long TorrentFileParserImpl::getTorrentSize(bencode::dict& dict)
         }
         catch (const std::exception& e)
         {
-            throw MissingTorrentInfo(e.what());
+            throw errors::MissingTorrentInfo(e.what());
         }
 
         fileSizeSum += fileSize;

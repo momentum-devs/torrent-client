@@ -2,19 +2,19 @@
 #include <iostream>
 
 #include "FileSystemServiceImpl.h"
-#include "TorrentFileParserImpl.h"
+#include "TorrentFileDeserializerImpl.h"
 
 int main()
 {
     std::unique_ptr<FileSystemService> fileSystemService = std::make_unique<FileSystemServiceImpl>();
 
-    std::unique_ptr<TorrentFileParser> torrentFileParser = std::make_unique<TorrentFileParserImpl>();
+    std::unique_ptr<TorrentFileDeserializer> torrentFileParser = std::make_unique<TorrentFileDeserializerImpl>();
 
     auto torrentFilePath = "sintel.torrent";
 
     auto torrentFileContent = fileSystemService->read(torrentFilePath);
 
-    auto torrentFileInfo = torrentFileParser->parse(torrentFileContent);
+    auto torrentFileInfo = torrentFileParser->deserialize(torrentFileContent);
 
     std::cout << torrentFileInfo << std::endl;
 

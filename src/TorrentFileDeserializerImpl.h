@@ -1,13 +1,13 @@
 #pragma once
 
 #include "bencode.hpp"
-#include "TorrentFileParser.h"
+#include "TorrentFileDeserializer.h"
 
 struct TorrentFileInfo;
 
-class TorrentFileParserImpl: public TorrentFileParser{
+class TorrentFileDeserializerImpl: public TorrentFileDeserializer{
 public:
-    TorrentFileInfo parse(std::string) override;
+    TorrentFileInfo deserialize(const std::string&) override;
 private:
     std::string getAnnounce(bencode::dict&);
     std::string getInfoHash(bencode::dict&);
