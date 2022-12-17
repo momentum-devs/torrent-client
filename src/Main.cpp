@@ -10,7 +10,7 @@ int main()
 
     std::unique_ptr<TorrentFileDeserializer> torrentFileParser = std::make_unique<TorrentFileDeserializerImpl>();
 
-    auto torrentFilePath = "sintel.torrent";
+    auto torrentFilePath = "testFiles/example.torrent";
 
     auto torrentFileContent = fileSystemService->read(torrentFilePath);
 

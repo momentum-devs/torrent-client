@@ -3,126 +3,127 @@
 #include <boost/compute/detail/sha1.hpp>
 
 #include "bencode.hpp"
-#include "errors/BencodeParseError.h"
+#include "errors/InvalidBencodeFileFormatError.h"
 #include "errors/MissingTorrentInfo.h"
+#include "fmt/format.h"
+#include "HexEncoder.h"
 #include "TorrentFileInfo.h"
+
+namespace
+{
+bencode::data parseBencode(const std::string& bencodeText);
+bencode::dict getDictionary(const bencode::data& data);
+
+template<typename T>
+T getFieldValue(const bencode::dict& bencodeDictionary, const std::string& fieldName)
+{
+    try
+    {
+        return std::get<T>(bencodeDictionary.at(fieldName));
+    }
+    catch (const std::exception& e)
+    {
+        throw errors::MissingTorrentInfo{fmt::format("Missing {} field.", fieldName)};
+    }
+}
+
+template<>
+bencode::data getFieldValue<bencode::data>(const bencode::dict& bencodeDictionary, const std::string& fieldName)
+{
+    try
+    {
+        return bencodeDictionary.at(fieldName);
+    }
+    catch (const std::exception& e)
+    {
+        throw errors::MissingTorrentInfo{fmt::format("Missing {} field.", fieldName)};
+    }
+}
+
+constexpr auto announceFieldName = "announce";
+constexpr auto infoFieldName = "info";
+constexpr auto nameFieldName = "name";
+constexpr auto piecesFieldName = "pieces";
+constexpr auto pieceLengthFieldName = "piece length";
+constexpr auto lengthFieldName= "length";
+}
 
 TorrentFileInfo TorrentFileDeserializerImpl::deserialize(const std::string& torrentFileContent)
 {
-    bencode::data bencodeData;
+    auto bencodeData = parseBencode(torrentFileContent);
 
-    try
-    {
-        bencodeData = bencode::decode(torrentFileContent);
-    }
-    catch (const std::exception& e)
-    {
-        throw errors::BencodeParseError(e.what());
-    }
+    auto bencodeDictionary = getDictionary(bencodeData);
 
-    bencode::dict torrentDict;
+    auto announce = getFieldValue<bencode::string>(bencodeDictionary, announceFieldName);
 
-    try
-    {
-        torrentDict = std::get<bencode::dict>(bencodeData);
-    }
-    catch (const std::exception& e)
-    {
-        throw errors::MissingTorrentInfo(e.what());
-    }
+    auto infoHash = getInfoHash(bencodeDictionary);
 
-    auto announce = getAnnounce(torrentDict);
+    auto infoDictionary = getFieldValue<bencode::dict>(bencodeDictionary, infoFieldName);
 
-    auto infoHash = getInfoHash(torrentDict);
+    auto torrentSize = getFieldValue<bencode::integer>(infoDictionary, lengthFieldName);
 
-    auto torrentSize = getTorrentSize(torrentDict);
+    auto piecesLength = getFieldValue<bencode::integer>(infoDictionary, pieceLengthFieldName);
 
-    return {announce, infoHash, torrentSize};
-}
-std::string TorrentFileDeserializerImpl::getAnnounce(bencode::dict& dict)
-{
-    std::string announce;
-    try
-    {
-        announce = std::get<bencode::string>(dict.at("announce"));
-    }
-    catch (const std::exception& e)
-    {
-        throw errors::MissingTorrentInfo(e.what());
-    }
+    auto fileName = getFieldValue<bencode::string>(infoDictionary, nameFieldName);
 
-    return announce;
+    auto piecesHashes = getPiecesHashes(infoDictionary);
+
+    return {announce, infoHash, torrentSize, piecesLength, fileName, piecesHashes};
 }
 
-std::string TorrentFileDeserializerImpl::getInfoHash(bencode::dict& dict)
+std::string TorrentFileDeserializerImpl::getInfoHash(bencode::dict& bencodeDictionary)
 {
-    bencode::data info;
-
-    try
-    {
-        info = dict.at("info");
-    }
-    catch (const std::exception& e)
-    {
-        throw errors::MissingTorrentInfo(e.what());
-    }
+    auto info = getFieldValue<bencode::data>(bencodeDictionary, infoFieldName);
 
     auto infoText = bencode::encode(info);
 
-    boost::compute::detail::sha1 sha1;
+    boost::compute::detail::sha1 infoHash;
 
-    sha1.process(infoText);
-
-    std::string infoHash = sha1;
+    infoHash.process(infoText);
 
     return infoHash;
 }
 
-long long TorrentFileDeserializerImpl::getTorrentSize(bencode::dict& dict)
+std::vector<std::string>  TorrentFileDeserializerImpl::getPiecesHashes(bencode::dict& infoDictionary)
 {
-    bencode::data info;
+    auto piecesFieldValue = getFieldValue<bencode::string>(infoDictionary, piecesFieldName);
 
+    std::vector<std::string> piecesHashesVector;
+
+    for(size_t i = 0; i < piecesFieldValue.size(); i += 20)
+    {
+        std::string pieceHashBytes{piecesFieldValue.begin() + i, piecesFieldValue.begin() + i + 20};
+        std::string pieceHashHex = HexEncoder::encode(pieceHashBytes);
+        piecesHashesVector.push_back(pieceHashHex);
+    }
+
+    return piecesHashesVector;
+}
+
+namespace
+{
+bencode::data parseBencode(const std::string& bencodeText)
+{
     try
     {
-        info = dict.at("info");
+        return bencode::decode(bencodeText);
     }
     catch (const std::exception& e)
     {
-        throw errors::MissingTorrentInfo(e.what());
+        throw errors::InvalidBencodeFileFormatError(e.what());
     }
+}
 
-    long long fileSizeSum = 0;
-
-    auto infoDict = std::get<bencode::dict>(info);
-
-    bencode::list files;
-
+bencode::dict getDictionary(const bencode::data& data)
+{
     try
     {
-        files = std::get<bencode::list>(infoDict.at("files"));
+        return std::get<bencode::dict>(data);
     }
     catch (const std::exception& e)
     {
-        throw errors::MissingTorrentInfo(e.what());
+        throw errors::MissingTorrentInfo{"Missing dictionary."};
     }
+}
 
-    for(const auto& file : files)
-    {
-        auto fileDict = std::get<bencode::dict>(file);
-
-        long long fileSize;
-
-        try
-        {
-            fileSize = std::get<bencode::integer>(fileDict.at("length"));
-        }
-        catch (const std::exception& e)
-        {
-            throw errors::MissingTorrentInfo(e.what());
-        }
-
-        fileSizeSum += fileSize;
-    }
-
-    return fileSizeSum;
 }

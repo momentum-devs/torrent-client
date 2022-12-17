@@ -5,6 +5,7 @@ set(SOURCES
         GetExecutablePath.cpp
         GetProjectPath.cpp
         StringHelper.cpp
+        HexEncoder.cpp
         )
 
 set(UT_SOURCES

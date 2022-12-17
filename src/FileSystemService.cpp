@@ -11,7 +11,7 @@ void FileSystemServiceImpl::write(const std::string& absolutePath, const std::st
 
     if (!fileStream.is_open())
     {
-        throw errors::FileNotFound(fmt::format("file not found", absolutePath));
+        throw errors::FileNotFound(fmt::format("file not found: {}", absolutePath));
     }
 
     fileStream << content;
@@ -23,7 +23,7 @@ void FileSystemServiceImpl::append(const std::string& absolutePath, const std::s
 
     if (!fileStream.is_open())
     {
-        throw errors::FileNotFound(fmt::format("file not found", absolutePath));
+        throw errors::FileNotFound(fmt::format("file not found: {}", absolutePath));
     }
 
     fileStream << content;
@@ -37,7 +37,7 @@ std::string FileSystemServiceImpl::read(const std::string& absolutePath) const
 
     if (!fileStream.is_open())
     {
-        throw errors::FileNotFound(fmt::format("file not found", absolutePath));
+        throw errors::FileNotFound(fmt::format("file not found: {}", absolutePath));
     }
 
     buffer << fileStream.rdbuf();
