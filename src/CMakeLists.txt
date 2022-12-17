@@ -7,6 +7,7 @@ set(SOURCES
         StringHelper.cpp
         HexEncoder.cpp
         PeerIdGenerator.cpp
+        CprHttpClient.cpp
         )
 
 set(UT_SOURCES
