@@ -3,11 +3,12 @@
 #include <string>
 
 #include "RetrievePeersPayload.h"
+#include "RetrievePeersResponse.h"
 
 class PeerRetriever
 {
 public:
     virtual ~PeerRetriever() = default;
 
-    virtual std::string retrievePeers(const RetrievePeersPayload& payload) = 0;
+    virtual RetrievePeersResponse retrievePeers(const RetrievePeersPayload& payload) = 0;
 };

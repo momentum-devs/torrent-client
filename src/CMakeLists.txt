@@ -8,6 +8,7 @@ set(SOURCES
         HexEncoder.cpp
         PeerIdGenerator.cpp
         CprHttpClient.cpp
+        AnnounceResponseDeserializerImpl.cpp
         )
 
 set(UT_SOURCES
@@ -16,6 +17,7 @@ set(UT_SOURCES
         GetExecutablePathTest.cpp
         GetProjectPathTest.cpp
         StringHelperTest.cpp
+        AnnounceResponseDeserializerImplTest.cpp
         )
 
 add_executable(${PROJECT_NAME} Main.cpp ${SOURCES})
