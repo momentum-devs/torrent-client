@@ -1,22 +1,27 @@
-#include <memory>
+#include <boost/asio.hpp>
 #include <iostream>
 
-#include "FileSystemServiceImpl.h"
 #include "TorrentFileDeserializerImpl.h"
 
 int main()
 {
-    std::unique_ptr<FileSystemService> fileSystemService = std::make_unique<FileSystemServiceImpl>();
+    boost::asio::io_context context;
+    boost::asio::ip::tcp::socket socket(context);
+    boost::asio::ip::address address = boost::asio::ip::make_address("169.1.40.40");
+    boost::asio::ip::tcp::endpoint endpoint(address, 51414);
 
-    std::unique_ptr<TorrentFileDeserializer> torrentFileParser = std::make_unique<TorrentFileDeserializerImpl>();
+    boost::system::error_code error;
 
-    auto torrentFilePath = "testFiles/example.torrent";
+    socket.connect(endpoint, error);
 
-    auto torrentFileContent = fileSystemService->read(torrentFilePath);
-
-    auto torrentFileInfo = torrentFileParser->deserialize(torrentFileContent);
-
-    std::cout << torrentFileInfo << std::endl;
+    if (!error)
+    {
+        std::cout << "The connection has been established!";
+    }
+    else
+    {
+        std::cerr << "Something went wrong :(";
+    }
 
     return 0;
 }

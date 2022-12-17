@@ -9,6 +9,7 @@ set(SOURCES
         PeerIdGenerator.cpp
         CprHttpClient.cpp
         AnnounceResponseDeserializerImpl.cpp
+        HandshakeMessageSerializer.cpp
         )
 
 set(UT_SOURCES
@@ -18,6 +19,7 @@ set(UT_SOURCES
         GetProjectPathTest.cpp
         StringHelperTest.cpp
         AnnounceResponseDeserializerImplTest.cpp
+        HandshakeMessageSerializerTest.cpp
         )
 
 add_executable(${PROJECT_NAME} Main.cpp ${SOURCES})
