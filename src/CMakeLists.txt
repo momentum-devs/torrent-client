@@ -10,6 +10,7 @@ set(SOURCES
         CprHttpClient.cpp
         AnnounceResponseDeserializerImpl.cpp
         HandshakeMessageSerializer.cpp
+        PeerConnector.cpp
         )
 
 set(UT_SOURCES

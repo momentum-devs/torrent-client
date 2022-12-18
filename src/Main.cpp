@@ -5,6 +5,8 @@
 #include "AnnounceResponseDeserializerImpl.h"
 #include "CprHttpClient.h"
 #include "FileSystemServiceImpl.h"
+#include "HandshakeMessageSerializer.h"
+#include "PeerConnector.h"
 #include "PeerIdGenerator.h"
 #include "PeerRetrieverImpl.h"
 #include "TorrentFileDeserializerImpl.h"
@@ -59,25 +61,18 @@ int main(int argc, char* argv[])
 
     auto response = peerRetriever->retrievePeers(retrievePeersPayload);
 
+    std::cout << "Get list of " << response.peersEndpoints.size() << " peers" <<std::endl;
+
     auto firstPeerEndpoint = response.peersEndpoints[0];
 
     boost::asio::io_context context;
-    boost::asio::ip::tcp::socket socket(context);
-    boost::asio::ip::address address = boost::asio::ip::make_address(firstPeerEndpoint.address);
-    boost::asio::ip::tcp::endpoint endpoint(address, firstPeerEndpoint.port);
 
-    boost::system::error_code error;
+    auto handshakeMessage =
+        HandshakeMessage{"BitTorrent protocol", torrentFileInfo.infoHash, PeerIdGenerator::generate()};
 
-    socket.connect(endpoint, error);
+    PeerConnector peerConnector = PeerConnector{context, firstPeerEndpoint, handshakeMessage};
 
-    if (!error)
-    {
-        std::cout << "The connection has been established!";
-    }
-    else
-    {
-        std::cerr << "Something went wrong :(";
-    }
+    context.run();
 
     return 0;
 }
