@@ -1,14 +1,70 @@
 #include <boost/asio.hpp>
+#include <boost/program_options.hpp>
 #include <iostream>
 
+#include "AnnounceResponseDeserializerImpl.h"
+#include "CprHttpClient.h"
+#include "FileSystemServiceImpl.h"
+#include "PeerIdGenerator.h"
+#include "PeerRetrieverImpl.h"
 #include "TorrentFileDeserializerImpl.h"
 
-int main()
+int main(int argc, char* argv[])
 {
+    boost::program_options::options_description description;
+
+    description.add_options()("torrent_file, t", boost::program_options::value<std::string>(),
+                              "path to torrent file to download");
+
+    boost::program_options::variables_map variablesMap;
+
+    auto parsedArguments = boost::program_options::parse_command_line(argc, argv, description);
+
+    boost::program_options::store(parsedArguments, variablesMap);
+
+    boost::program_options::notify(variablesMap);
+
+    if (!variablesMap.count("torrent_file"))
+    {
+        std::cout << "put argument: torrent_file, t - path to torrent file to download" << std::endl;
+        return 0;
+    }
+
+    auto torrentFilePath = variablesMap["torrent_file"].as<std::string>();
+
+    std::unique_ptr<FileSystemService> fileSystemService = std::make_unique<FileSystemServiceImpl>();
+
+    auto torrentFileContent = fileSystemService->read(torrentFilePath);
+
+    std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializer = std::make_unique<TorrentFileDeserializerImpl>();
+
+    auto torrentFileInfo = torrentFileDeserializer->deserialize(torrentFileContent);
+
+    std::unique_ptr<HttpClient> httpClient = std::make_unique<CprHttpClient>();
+
+    std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer =
+        std::make_unique<AnnounceResponseDeserializerImpl>();
+
+    std::unique_ptr<PeerRetriever> peerRetriever =
+        std::make_unique<PeerRetrieverImpl>(std::move(httpClient), std::move(responseDeserializer));
+
+    auto retrievePeersPayload = RetrievePeersPayload{torrentFileInfo.announce,
+                                                     torrentFileInfo.infoHash,
+                                                     PeerIdGenerator::generate(),
+                                                     "0",
+                                                     "0",
+                                                     "0",
+                                                     std::to_string(torrentFileInfo.length),
+                                                     "1"};
+
+    auto response = peerRetriever->retrievePeers(retrievePeersPayload);
+
+    auto firstPeerEndpoint = response.peersEndpoints[0];
+
     boost::asio::io_context context;
     boost::asio::ip::tcp::socket socket(context);
-    boost::asio::ip::address address = boost::asio::ip::make_address("169.1.40.40");
-    boost::asio::ip::tcp::endpoint endpoint(address, 51414);
+    boost::asio::ip::address address = boost::asio::ip::make_address(firstPeerEndpoint.address);
+    boost::asio::ip::tcp::endpoint endpoint(address, firstPeerEndpoint.port);
 
     boost::system::error_code error;
 
