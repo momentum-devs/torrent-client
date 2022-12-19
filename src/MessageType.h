@@ -4,9 +4,9 @@
 #include <string>
 #include <unordered_map>
 
-#include "errors/MessageTypeNotFoundError.h"
+#include "errors/MessageIdMappingNotFoundError.h"
 
-enum class MessageType
+enum MessageId
 {
     Choke,
     Unchoke,
@@ -19,27 +19,31 @@ enum class MessageType
     Cancel,
 };
 
-inline std::string toString(MessageType messageType)
+inline std::string toString(MessageId messageId)
 {
-    const std::unordered_map<MessageType, std::string> messageTypesToStringMapping{
-        {MessageType::Choke, "Choke"},           {MessageType::Unchoke, "Unchoke"},
-        {MessageType::Choke, "Running"},         {MessageType::Choke, "Running"},
-        {MessageType::Interested, "Interested"}, {MessageType::NotInterested, "NotInterested"},
-        {MessageType::Bitfield, "Bitfield"},     {MessageType::Request, "Request"},
-        {MessageType::Piece, "Piece"},           {MessageType::Cancel, "Cancel"},
+    const std::unordered_map<MessageId, std::string> messageIdsToStringMapping{
+        {MessageId::Choke, "Choke"},
+        {MessageId::Unchoke, "Unchoke"},
+        {MessageId::Interested, "Interested"},
+        {MessageId::NotInterested, "NotInterested"},
+        {MessageId::Have, "Have"},
+        {MessageId::Bitfield, "Bitfield"},
+        {MessageId::Request, "Request"},
+        {MessageId::Piece, "Piece"},
+        {MessageId::Cancel, "Cancel"},
     };
 
     try
     {
-        return messageTypesToStringMapping.at(messageType);
+        return messageIdsToStringMapping.at(messageId);
     }
     catch (const std::out_of_range& e)
     {
-        throw errors::MessageTypeNotFoundNotError{e.what()};
+        throw errors::MessageIdMappingNotFoundNotError{e.what()};
     }
 }
 
-inline std::ostream& operator<<(std::ostream& os, MessageType messageType)
+inline std::ostream& operator<<(std::ostream& os, MessageId messageId)
 {
-    return os << "MessageType::" << toString(messageType);
+    return os << "MessageId::" << toString(messageId) << ", value: " << static_cast<unsigned int>(messageId);
 }

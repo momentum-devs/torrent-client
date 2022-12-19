@@ -7,16 +7,16 @@
 
 struct Message
 {
-    MessageType messageType;
+    MessageId id;
     std::string payload;
 };
 
 inline bool operator==(const Message& lhs, const Message& rhs)
 {
-    return (lhs.messageType == rhs.messageType) and (lhs.payload == rhs.payload);
+    return (lhs.id == rhs.id) and (lhs.payload == rhs.payload);
 }
 
 inline std::ostream& operator<<(std::ostream& os, const Message& message)
 {
-    return os << "messageType: " << message.messageType << " payload: " << message.payload;
+    return os << "id: " << message.id << " payload: " << message.payload;
 }

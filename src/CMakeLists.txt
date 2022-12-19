@@ -11,6 +11,7 @@ set(SOURCES
         AnnounceResponseDeserializerImpl.cpp
         HandshakeMessageSerializer.cpp
         PeerConnector.cpp
+        MessageSerializer.cpp
         )
 
 set(UT_SOURCES
@@ -21,6 +22,7 @@ set(UT_SOURCES
         StringHelperTest.cpp
         AnnounceResponseDeserializerImplTest.cpp
         HandshakeMessageSerializerTest.cpp
+        MessageSerializerTest.cpp
         )
 
 find_package(Boost 1.30 COMPONENTS program_options REQUIRED)
