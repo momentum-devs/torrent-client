@@ -5,6 +5,7 @@
 #include "AnnounceResponseDeserializerImpl.h"
 #include "CprHttpClient.h"
 #include "FileSystemServiceImpl.h"
+#include "fmt/format.h"
 #include "HandshakeMessageSerializer.h"
 #include "PeerConnector.h"
 #include "PeerIdGenerator.h"
@@ -42,6 +43,10 @@ int main(int argc, char* argv[])
 
     auto torrentFileInfo = torrentFileDeserializer->deserialize(torrentFileContent);
 
+    const auto numberOfPieces = static_cast<unsigned>(torrentFileInfo.piecesHashes.size());
+
+    std::cout << fmt::format("File has {} pieces.", numberOfPieces) << std::endl;
+
     std::unique_ptr<HttpClient> httpClient = std::make_unique<CprHttpClient>();
 
     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer =
@@ -61,16 +66,16 @@ int main(int argc, char* argv[])
 
     auto response = peerRetriever->retrievePeers(retrievePeersPayload);
 
-    std::cout << "Get list of " << response.peersEndpoints.size() << " peers" <<std::endl;
+    std::cout << "Get list of " << response.peersEndpoints.size() << " peers" << std::endl;
 
-    auto firstPeerEndpoint = response.peersEndpoints[0];
+    auto firstPeerEndpoint = response.peersEndpoints[9];
 
     boost::asio::io_context context;
 
     auto handshakeMessage =
         HandshakeMessage{"BitTorrent protocol", torrentFileInfo.infoHash, PeerIdGenerator::generate()};
 
-    PeerConnector peerConnector = PeerConnector{context, firstPeerEndpoint, handshakeMessage};
+    PeerConnector peerConnector = PeerConnector{context, firstPeerEndpoint, handshakeMessage, numberOfPieces};
 
     context.run();
 
