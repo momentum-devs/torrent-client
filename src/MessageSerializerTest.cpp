@@ -17,6 +17,20 @@ public:
     MessageSerializer serializer;
 };
 
+TEST_F(MessageSerializerTest, serializeUnchokeMessageWithoutPayload)
+{
+    const auto message = ::Message{MessageId::Unchoke, ""};
+
+    const auto serializedMessage = serializer.serialize(message);
+
+    ASSERT_EQ(serializedMessage.size(), 5);
+    ASSERT_EQ(static_cast<int>(serializedMessage[0]), 0);
+    ASSERT_EQ(static_cast<int>(serializedMessage[1]), 0);
+    ASSERT_EQ(static_cast<int>(serializedMessage[2]), 0);
+    ASSERT_EQ(static_cast<int>(serializedMessage[3]), 1);
+    ASSERT_EQ(static_cast<int>(serializedMessage[4]), 1);
+}
+
 TEST_F(MessageSerializerTest, serializeUnchokeMessage)
 {
     const auto message = ::Message{MessageId::Unchoke, payload};

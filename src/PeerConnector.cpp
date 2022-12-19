@@ -5,6 +5,7 @@
 
 #include "errors/PeerConnectionError.h"
 #include "HandshakeMessageSerializer.h"
+#include "MessageSerializer.h"
 
 PeerConnector::PeerConnector(boost::asio::io_context& ioContext, const PeerEndpoint& peerEndpoint,
                              const HandshakeMessage& handshakeMessage, unsigned numberOfPiecesInit)
@@ -54,12 +55,6 @@ void PeerConnector::onWriteHandshake(boost::system::error_code error, std::size_
 
 void PeerConnector::onReadHandshake(boost::system::error_code error, std::size_t bytes_transferred)
 {
-    if (error)
-    {
-        std::cerr << error.message() << std::endl;
-        return;
-    }
-
     std::string data{std::istreambuf_iterator<char>(&response), std::istreambuf_iterator<char>()};
 
     std::cout << "Read handshake from " << socket.remote_endpoint() << ": " << error.message()
@@ -67,19 +62,13 @@ void PeerConnector::onReadHandshake(boost::system::error_code error, std::size_t
 
     const auto numberOfBytesInBitfield = static_cast<int>(ceilf(static_cast<float>(numberOfPieces) / 8.f)) + 5;
 
-    boost::asio::async_read(
-        socket, response, boost::asio::transfer_exactly(numberOfBytesInBitfield),
-        std::bind(&PeerConnector::onReadBitfieldMessage, this, std::placeholders::_1, std::placeholders::_2));
+    boost::asio::async_read(socket, response, boost::asio::transfer_exactly(numberOfBytesInBitfield),
+                            [this](boost::system::error_code errorCode, std::size_t bytes)
+                            { onReadBitfieldMessage(errorCode, bytes); });
 }
 
 void PeerConnector::onReadBitfieldMessage(boost::system::error_code error, std::size_t bytes_transferred)
 {
-    if (error)
-    {
-        std::cerr << error.message() << std::endl;
-        return;
-    }
-
     std::string data{std::istreambuf_iterator<char>(&response), std::istreambuf_iterator<char>()};
 
     for (int i = 5; i < data.size(); i++)
@@ -89,4 +78,32 @@ void PeerConnector::onReadBitfieldMessage(boost::system::error_code error, std::
 
     std::cout << "Read bitfield message from " << socket.remote_endpoint() << ": " << error.message()
               << ", bytes transferred: " << bytes_transferred << " bitfield message: " << data << std::endl;
+
+    const auto unchokeMessage = Message{MessageId::Unchoke, ""};
+
+    auto serializedUnchokeMessage = MessageSerializer().serialize(unchokeMessage);
+
+    boost::asio::async_write(
+        socket, boost::asio::buffer(serializedUnchokeMessage),
+        std::bind(&PeerConnector::onWriteUnchokeMessage, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void PeerConnector::onWriteUnchokeMessage(boost::system::error_code error, std::size_t bytes_transferred)
+{
+    std::cout << "Write unchoke message to " << socket.remote_endpoint() << ": " << error.message()
+              << ", bytes transferred: " << bytes_transferred << std::endl;
+
+    const auto interestedMessage = Message{MessageId::Interested, ""};
+
+    auto serializedInterestedMessage = MessageSerializer().serialize(interestedMessage);
+
+    boost::asio::async_write(
+        socket, boost::asio::buffer(serializedInterestedMessage),
+        std::bind(&PeerConnector::onWriteInterestedMessage, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void PeerConnector::onWriteInterestedMessage(boost::system::error_code error, std::size_t bytes_transferred)
+{
+    std::cout << "Write interested message to " << socket.remote_endpoint() << ": " << error.message()
+              << ", bytes transferred: " << bytes_transferred << std::endl;
 }
