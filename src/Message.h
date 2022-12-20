@@ -3,7 +3,7 @@
 #include <ostream>
 #include <string>
 
-#include "MessageType.h"
+#include "MessageId.h"
 
 struct Message
 {
