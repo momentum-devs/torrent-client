@@ -2,7 +2,7 @@
 
 #include <gmock/gmock.h>
 
-#include "PeerRetriever.h"
+#include "PeersRetriever.h"
 
 class PeerRetrieverMock : public PeerRetriever
 {

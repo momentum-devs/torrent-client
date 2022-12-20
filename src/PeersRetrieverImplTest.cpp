@@ -1,4 +1,4 @@
-#include "PeerRetrieverImpl.h"
+#include "PeersRetrieverImpl.h"
 
 #include "gtest/gtest.h"
 
@@ -45,7 +45,7 @@ public:
         std::make_unique<AnnounceResponseDeserializerMock>();
     AnnounceResponseDeserializerMock* responseDeserializerMock = responseDeserializerMockInit.get();
 
-    PeerRetrieverImpl retriever{std::move(httpClientMockInit), std::move(responseDeserializerMockInit)};
+    PeersRetrieverImpl retriever{std::move(httpClientMockInit), std::move(responseDeserializerMockInit)};
 };
 
 TEST_F(PeerRetrieverImplTest, retrievesPeers)

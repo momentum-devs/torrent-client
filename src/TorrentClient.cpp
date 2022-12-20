@@ -9,7 +9,7 @@ TorrentClient::TorrentClient(std::unique_ptr<FileSystemService> fileSystemServic
                              std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializerInit,
                              std::unique_ptr<HttpClient> httpClientInit,
                              std::unique_ptr<AnnounceResponseDeserializer> responseDeserializerInit,
-                             std::unique_ptr<PeerRetriever> peerRetrieverInit)
+                             std::unique_ptr<PeersRetriever> peerRetrieverInit)
     : fileSystemService{std::move(fileSystemServiceInit)},
       torrentFileDeserializer{std::move(torrentFileDeserializerInit)},
       httpClient{std::move(httpClientInit)},
@@ -43,13 +43,13 @@ void TorrentClient::download(const std::string& torrentFilePath)
 
     std::cout << "Get list of " << response.peersEndpoints.size() << " peers" << std::endl;
 
-    auto firstPeerEndpoint = response.peersEndpoints[9];
+    auto firstPeerEndpoint = response.peersEndpoints[7];
 
     boost::asio::io_context context;
 
     std::unique_ptr<PeerToPeerSession> peerConnector =
         std::make_unique<PeerToPeerSessionImpl>(context, numberOfPieces, firstPeerEndpoint, peerId);
-    
+
     peerConnector->startSession(torrentFileInfo.infoHash);
 
     context.run();

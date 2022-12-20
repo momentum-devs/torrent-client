@@ -1,7 +1,7 @@
 set(SOURCES
         FileSystemService.cpp
         TorrentFileDeserializerImpl.cpp
-        PeerRetrieverImpl.cpp
+        PeersRetrieverImpl.cpp
         GetExecutablePath.cpp
         GetProjectPath.cpp
         StringHelper.cpp
@@ -16,7 +16,7 @@ set(SOURCES
         )
 
 set(UT_SOURCES
-        PeerRetrieverImplTest.cpp
+        PeersRetrieverImplTest.cpp
         TorrentFileDeserializerImplTest.cpp
         GetExecutablePathTest.cpp
         GetProjectPathTest.cpp

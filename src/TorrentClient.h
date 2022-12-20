@@ -6,7 +6,7 @@
 #include "AnnounceResponseDeserializer.h"
 #include "FileSystemService.h"
 #include "HttpClient.h"
-#include "PeerRetriever.h"
+#include "PeersRetriever.h"
 #include "TorrentFileDeserializer.h"
 
 class TorrentClient
@@ -16,7 +16,7 @@ public:
                   std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializer,
                   std::unique_ptr<HttpClient> httpClient,
                   std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer,
-                  std::unique_ptr<PeerRetriever> peerRetriever);
+                  std::unique_ptr<PeersRetriever> peerRetriever);
 
     void download(const std::string& torrentFilePath);
 
@@ -25,5 +25,5 @@ private:
     std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializer;
     std::unique_ptr<HttpClient> httpClient;
     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer;
-    std::unique_ptr<PeerRetriever> peerRetriever;
+    std::unique_ptr<PeersRetriever> peerRetriever;
 };

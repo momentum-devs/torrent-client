@@ -1,15 +1,15 @@
-#include "PeerRetrieverImpl.h"
+#include "PeersRetrieverImpl.h"
 
 #include "GetProjectPath.h"
 #include "HexEncoder.h"
 
-PeerRetrieverImpl::PeerRetrieverImpl(std::unique_ptr<HttpClient> httpClientInit,
-                                     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializerInit)
+PeersRetrieverImpl::PeersRetrieverImpl(std::unique_ptr<HttpClient> httpClientInit,
+                                       std::unique_ptr<AnnounceResponseDeserializer> responseDeserializerInit)
     : httpClient{std::move(httpClientInit)}, responseDeserializer{std::move(responseDeserializerInit)}
 {
 }
 
-RetrievePeersResponse PeerRetrieverImpl::retrievePeers(const RetrievePeersPayload& payload)
+RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPayload& payload)
 {
     const auto queryParameters = std::map<std::string, std::string>{{"info_hash", HexEncoder::decode(payload.infoHash)},
                                                                     {"peer_id", payload.peerId},

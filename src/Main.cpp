@@ -4,7 +4,7 @@
 #include "AnnounceResponseDeserializerImpl.h"
 #include "CprHttpClient.h"
 #include "FileSystemServiceImpl.h"
-#include "PeerRetrieverImpl.h"
+#include "PeersRetrieverImpl.h"
 #include "TorrentClient.h"
 #include "TorrentFileDeserializerImpl.h"
 
@@ -36,8 +36,8 @@ int main(int argc, char* argv[])
     std::unique_ptr<HttpClient> httpClient = std::make_unique<CprHttpClient>();
     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer =
         std::make_unique<AnnounceResponseDeserializerImpl>();
-    std::unique_ptr<PeerRetriever> peerRetriever =
-        std::make_unique<PeerRetrieverImpl>(std::move(httpClient), std::move(responseDeserializer));
+    std::unique_ptr<PeersRetriever> peerRetriever =
+        std::make_unique<PeersRetrieverImpl>(std::move(httpClient), std::move(responseDeserializer));
 
     TorrentClient torrentClient{std::move(fileSystemService), std::move(torrentFileDeserializer), std::move(httpClient),
                                 std::move(responseDeserializer), std::move(peerRetriever)};
