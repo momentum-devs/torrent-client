@@ -1,11 +1,8 @@
 add_subdirectory(common)
 
 set(SOURCES
-        FileSystemService.cpp
         TorrentFileDeserializerImpl.cpp
         PeerRetrieverImpl.cpp
-        GetExecutablePath.cpp
-        GetProjectPath.cpp
         HexEncoder.cpp
         PeerIdGenerator.cpp
         CprHttpClient.cpp
@@ -19,8 +16,6 @@ set(SOURCES
 set(UT_SOURCES
         PeerRetrieverImplTest.cpp
         TorrentFileDeserializerImplTest.cpp
-        GetExecutablePathTest.cpp
-        GetProjectPathTest.cpp
         AnnounceResponseDeserializerImplTest.cpp
         HandshakeMessageSerializerTest.cpp
         MessageSerializerTest.cpp

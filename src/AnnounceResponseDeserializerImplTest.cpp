@@ -9,7 +9,7 @@ using namespace ::testing;
 
 namespace
 {
-std::unique_ptr<FileSystemService> fileSystemService = std::make_unique<FileSystemServiceImpl>();
+std::unique_ptr<FileSystemServiceImpl> fileSystemService = std::make_unique<FileSystemServiceImpl>();
 const auto projectPath = getProjectPath("torrent-client");
 const auto testFileDirectoryPath = projectPath + "src/testFiles/";
 const auto validAnnounceResponseFilePath = testFileDirectoryPath + "validAnnounceResponse.txt";

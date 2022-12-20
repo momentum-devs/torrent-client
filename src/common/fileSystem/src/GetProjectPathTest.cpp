@@ -6,6 +6,7 @@
 #include "errors/FileNotFound.h"
 
 using namespace ::testing;
+using namespace common::fileSystem;
 
 namespace
 {

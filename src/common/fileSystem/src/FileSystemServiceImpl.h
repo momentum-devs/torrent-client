@@ -2,6 +2,8 @@
 
 #include "FileSystemService.h"
 
+namespace common::fileSystem
+{
 class FileSystemServiceImpl : public FileSystemService
 {
 public:
@@ -9,3 +11,4 @@ public:
     void append(const std::string& absolutePath, const std::string& content) const override;
     std::string read(const std::string& absolutePath) const override;
 };
+}

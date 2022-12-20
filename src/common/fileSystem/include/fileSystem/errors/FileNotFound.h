@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace errors
+namespace common::fileSystem::errors
 {
 struct FileNotFound : std::runtime_error
 {

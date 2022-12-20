@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
 
     auto torrentFilePath = variablesMap["torrent_file"].as<std::string>();
 
-    std::unique_ptr<FileSystemService> fileSystemService = std::make_unique<FileSystemServiceImpl>();
+    std::unique_ptr<FileSystemServiceImpl> fileSystemService = std::make_unique<FileSystemServiceImpl>();
 
     auto torrentFileContent = fileSystemService->read(torrentFilePath);
 

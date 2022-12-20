@@ -2,6 +2,8 @@
 
 #include <string>
 
+namespace common::fileSystem
+{
 class FileSystemService
 {
 public:
@@ -11,3 +13,4 @@ public:
     virtual void append(const std::string& absolutePath, const std::string& data) const = 0;
     virtual std::string read(const std::string& absolutePath) const = 0;
 };
+}

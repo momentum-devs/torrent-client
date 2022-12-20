@@ -1,10 +1,13 @@
+#include "FileSystemServiceImpl.h"
+
 #include <fstream>
 #include <sstream>
 
 #include "errors/FileNotFound.h"
-#include "FileSystemServiceImpl.h"
 #include "fmt/core.h"
 
+namespace common::fileSystem
+{
 void FileSystemServiceImpl::write(const std::string& absolutePath, const std::string& content) const
 {
     std::ofstream fileStream{absolutePath};
@@ -43,4 +46,5 @@ std::string FileSystemServiceImpl::read(const std::string& absolutePath) const
     buffer << fileStream.rdbuf();
 
     return buffer.str();
+}
 }
