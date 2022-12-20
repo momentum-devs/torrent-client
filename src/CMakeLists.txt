@@ -10,7 +10,7 @@ set(SOURCES
         CprHttpClient.cpp
         AnnounceResponseDeserializerImpl.cpp
         HandshakeMessageSerializer.cpp
-        PeerConnector.cpp
+        PeerToPeerSessionImpl.cpp
         MessageSerializer.cpp
         TorrentClient.cpp
         )

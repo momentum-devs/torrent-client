@@ -2,12 +2,14 @@
 
 #include "HandshakeMessage.h"
 #include "PeerEndpoint.h"
+#include "PeerToPeerSession.h"
 
-class PeerConnector
+class PeerToPeerSessionImpl : public PeerToPeerSession
 {
 public:
-    PeerConnector(boost::asio::io_context& ioContext, const PeerEndpoint& peerEndpoint,
-                  const HandshakeMessage& handshakeMessage, unsigned numberOfPieces);
+    PeerToPeerSessionImpl(boost::asio::io_context& ioContext, unsigned numberOfPieces, PeerEndpoint peerEndpoint,
+                          std::string peerId);
+    void startSession(const std::string& infoHash) override;
 
 private:
     void sendHandshake(const HandshakeMessage& handshakeMessage);
@@ -23,4 +25,6 @@ private:
     std::string request;
     boost::asio::streambuf response;
     const unsigned numberOfPieces;
+    PeerEndpoint peerEndpoint;
+    const std::string peerId;
 };

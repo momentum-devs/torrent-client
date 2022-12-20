@@ -2,8 +2,8 @@
 
 #include "fmt/format.h"
 #include "HandshakeMessage.h"
-#include "PeerConnector.h"
 #include "PeerIdGenerator.h"
+#include "PeerToPeerSessionImpl.h"
 
 TorrentClient::TorrentClient(std::unique_ptr<FileSystemService> fileSystemServiceInit,
                              std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializerInit,
@@ -47,9 +47,10 @@ void TorrentClient::download(const std::string& torrentFilePath)
 
     boost::asio::io_context context;
 
-    auto handshakeMessage = HandshakeMessage{"BitTorrent protocol", torrentFileInfo.infoHash, peerId};
-
-    PeerConnector peerConnector = PeerConnector{context, firstPeerEndpoint, handshakeMessage, numberOfPieces};
+    std::unique_ptr<PeerToPeerSession> peerConnector =
+        std::make_unique<PeerToPeerSessionImpl>(context, numberOfPieces, firstPeerEndpoint, peerId);
+    
+    peerConnector->startSession(torrentFileInfo.infoHash);
 
     context.run();
 }
