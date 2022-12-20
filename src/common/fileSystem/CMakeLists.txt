@@ -2,6 +2,7 @@ set(SOURCES
         src/FileSystemServiceImpl.cpp
         src/GetProjectPath.cpp
         src/GetExecutablePath.cpp
+        src/FileSystemServiceFactory.cpp
         )
 
 set(UT_SOURCES

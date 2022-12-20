@@ -2,14 +2,16 @@
 
 #include "gtest/gtest.h"
 
-#include "FileSystemServiceImpl.h"
-#include "GetProjectPath.h"
+#include "fileSystem/FileSystemServiceFactory.h"
+#include "fileSystem/GetProjectPath.h"
 
 using namespace ::testing;
+using namespace common::fileSystem;
 
 namespace
 {
-std::unique_ptr<FileSystemServiceImpl> fileSystemService = std::make_unique<FileSystemServiceImpl>();
+std::unique_ptr<common::fileSystem::FileSystemService> fileSystemService =
+    FileSystemServiceFactory().createFileSystemService();
 const auto projectPath = getProjectPath("torrent-client");
 const auto testFileDirectoryPath = projectPath + "src/testFiles/";
 const auto validAnnounceResponseFilePath = testFileDirectoryPath + "validAnnounceResponse.txt";
