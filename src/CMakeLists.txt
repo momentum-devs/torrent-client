@@ -12,6 +12,7 @@ set(SOURCES
         HandshakeMessageSerializer.cpp
         PeerConnector.cpp
         MessageSerializer.cpp
+        TorrentClient.cpp
         )
 
 set(UT_SOURCES

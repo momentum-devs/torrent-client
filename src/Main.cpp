@@ -1,15 +1,11 @@
-#include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 #include <iostream>
 
 #include "AnnounceResponseDeserializerImpl.h"
 #include "CprHttpClient.h"
 #include "FileSystemServiceImpl.h"
-#include "fmt/format.h"
-#include "HandshakeMessageSerializer.h"
-#include "PeerConnector.h"
-#include "PeerIdGenerator.h"
 #include "PeerRetrieverImpl.h"
+#include "TorrentClient.h"
 #include "TorrentFileDeserializerImpl.h"
 
 int main(int argc, char* argv[])
@@ -36,48 +32,17 @@ int main(int argc, char* argv[])
     auto torrentFilePath = variablesMap["torrent_file"].as<std::string>();
 
     std::unique_ptr<FileSystemService> fileSystemService = std::make_unique<FileSystemServiceImpl>();
-
-    auto torrentFileContent = fileSystemService->read(torrentFilePath);
-
     std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializer = std::make_unique<TorrentFileDeserializerImpl>();
-
-    auto torrentFileInfo = torrentFileDeserializer->deserialize(torrentFileContent);
-
-    const auto numberOfPieces = static_cast<unsigned>(torrentFileInfo.piecesHashes.size());
-
-    std::cout << fmt::format("File has {} pieces.", numberOfPieces) << std::endl;
-
     std::unique_ptr<HttpClient> httpClient = std::make_unique<CprHttpClient>();
-
     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer =
         std::make_unique<AnnounceResponseDeserializerImpl>();
-
     std::unique_ptr<PeerRetriever> peerRetriever =
         std::make_unique<PeerRetrieverImpl>(std::move(httpClient), std::move(responseDeserializer));
 
-    auto retrievePeersPayload = RetrievePeersPayload{torrentFileInfo.announce,
-                                                     torrentFileInfo.infoHash,
-                                                     PeerIdGenerator::generate(),
-                                                     "0",
-                                                     "0",
-                                                     "0",
-                                                     std::to_string(torrentFileInfo.length),
-                                                     "1"};
+    TorrentClient torrentClient{std::move(fileSystemService), std::move(torrentFileDeserializer), std::move(httpClient),
+                                std::move(responseDeserializer), std::move(peerRetriever)};
 
-    auto response = peerRetriever->retrievePeers(retrievePeersPayload);
-
-    std::cout << "Get list of " << response.peersEndpoints.size() << " peers" << std::endl;
-
-    auto firstPeerEndpoint = response.peersEndpoints[9];
-
-    boost::asio::io_context context;
-
-    auto handshakeMessage =
-        HandshakeMessage{"BitTorrent protocol", torrentFileInfo.infoHash, PeerIdGenerator::generate()};
-
-    PeerConnector peerConnector = PeerConnector{context, firstPeerEndpoint, handshakeMessage, numberOfPieces};
-
-    context.run();
+    torrentClient.download(torrentFilePath);
 
     return 0;
 }
