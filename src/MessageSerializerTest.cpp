@@ -2,8 +2,6 @@
 
 #include "gtest/gtest.h"
 
-#include "HexEncoder.h"
-
 using namespace ::testing;
 
 namespace

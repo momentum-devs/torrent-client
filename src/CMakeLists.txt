@@ -12,6 +12,7 @@ set(SOURCES
         HandshakeMessageSerializer.cpp
         PeerConnector.cpp
         MessageSerializer.cpp
+        Bitfield.cpp
         )
 
 set(UT_SOURCES
@@ -23,6 +24,7 @@ set(UT_SOURCES
         AnnounceResponseDeserializerImplTest.cpp
         HandshakeMessageSerializerTest.cpp
         MessageSerializerTest.cpp
+        BitfieldTest.cpp
         )
 
 find_package(Boost 1.30 COMPONENTS program_options REQUIRED)
