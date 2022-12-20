@@ -4,15 +4,16 @@
 
 #include "errors/InvalidBencodeFileFormatError.h"
 #include "errors/MissingTorrentInfo.h"
-#include "FileSystemServiceImpl.h"
-#include "GetProjectPath.h"
+#include "fileSystem/FileSystemServiceFactory.h"
+#include "fileSystem/GetProjectPath.h"
 
 using namespace ::testing;
 
 namespace
 {
-std::unique_ptr<FileSystemServiceImpl> fileSystemService = std::make_unique<FileSystemServiceImpl>();
-const auto projectPath = getProjectPath("torrent-client");
+std::unique_ptr<common::fileSystem::FileSystemService> fileSystemService =
+    common::fileSystem::FileSystemServiceFactory().createFileSystemService();
+const auto projectPath = common::fileSystem::getProjectPath("torrent-client");
 const auto testFileDirectoryPath = projectPath + "src/testFiles/";
 const auto validTorrentFilePath = testFileDirectoryPath + "valid.torrent";
 const auto torrentFileWithoutAnnounceFieldPath = testFileDirectoryPath + "fileWithoutAnnounceField.torrent";

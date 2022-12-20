@@ -2,8 +2,8 @@
 
 #include <vector>
 
+#include "collection/StlOperators.h"
 #include "PeerEndpoint.h"
-#include "StlOperators.h"
 
 struct RetrievePeersResponse
 {

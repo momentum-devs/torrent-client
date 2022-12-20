@@ -1,9 +1,8 @@
 #include "PeerRetrieverImpl.h"
 
-#include "GetProjectPath.h"
 #include "HexEncoder.h"
 
-PeerRetrieverImpl::PeerRetrieverImpl(std::unique_ptr<HttpClient> httpClientInit,
+PeerRetrieverImpl::PeerRetrieverImpl(std::unique_ptr<common::httpClient::HttpClient> httpClientInit,
                                      std::unique_ptr<AnnounceResponseDeserializer> responseDeserializerInit)
     : httpClient{std::move(httpClientInit)}, responseDeserializer{std::move(responseDeserializerInit)}
 {

@@ -3,10 +3,10 @@
 #include <iostream>
 
 #include "AnnounceResponseDeserializerImpl.h"
-#include "CprHttpClient.h"
-#include "FileSystemServiceImpl.h"
+#include "fileSystem/FileSystemServiceFactory.h"
 #include "fmt/format.h"
 #include "HandshakeMessageSerializer.h"
+#include "httpClient/HttpClientFactory.h"
 #include "PeerConnector.h"
 #include "PeerIdGenerator.h"
 #include "PeerRetrieverImpl.h"
@@ -35,7 +35,8 @@ int main(int argc, char* argv[])
 
     auto torrentFilePath = variablesMap["torrent_file"].as<std::string>();
 
-    std::unique_ptr<FileSystemServiceImpl> fileSystemService = std::make_unique<FileSystemServiceImpl>();
+    std::unique_ptr<common::fileSystem::FileSystemService> fileSystemService =
+        common::fileSystem::FileSystemServiceFactory().createFileSystemService();
 
     auto torrentFileContent = fileSystemService->read(torrentFilePath);
 
@@ -47,7 +48,8 @@ int main(int argc, char* argv[])
 
     std::cout << fmt::format("File has {} pieces.", numberOfPieces) << std::endl;
 
-    std::unique_ptr<HttpClient> httpClient = std::make_unique<CprHttpClient>();
+    std::unique_ptr<common::httpClient::HttpClient> httpClient =
+        common::httpClient::HttpClientFactory().createHttpClient();
 
     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer =
         std::make_unique<AnnounceResponseDeserializerImpl>();

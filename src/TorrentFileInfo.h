@@ -1,9 +1,9 @@
 #pragma once
 
-#include <string>
 #include <ostream>
+#include <string>
 
-#include "StlOperators.h"
+#include "collection/StlOperators.h"
 
 struct TorrentFileInfo
 {
@@ -17,19 +17,18 @@ struct TorrentFileInfo
 
 inline std::ostream& operator<<(std::ostream& os, const TorrentFileInfo& torrentFileInfo)
 {
-    return os << "name: " << torrentFileInfo.fileName
-              << "\nannounce: " << torrentFileInfo.announce
-              << "\ninfo hash: " << torrentFileInfo.infoHash
-              << "\nlength: " << torrentFileInfo.length
+    return os << "name: " << torrentFileInfo.fileName << "\nannounce: " << torrentFileInfo.announce
+              << "\ninfo hash: " << torrentFileInfo.infoHash << "\nlength: " << torrentFileInfo.length
               << "\npiece length: " << torrentFileInfo.pieceLength
               << "\npieces hashes: " << torrentFileInfo.piecesHashes;
-
 }
 
 inline bool operator==(const TorrentFileInfo& lhs, const TorrentFileInfo& rhs)
 {
     auto tieStruct = [](const TorrentFileInfo& torrentFileInfo)
-    { return std::tie(torrentFileInfo.announce, torrentFileInfo.infoHash, torrentFileInfo.length,
-                      torrentFileInfo.pieceLength, torrentFileInfo.piecesHashes, torrentFileInfo.fileName); };
+    {
+        return std::tie(torrentFileInfo.announce, torrentFileInfo.infoHash, torrentFileInfo.length,
+                        torrentFileInfo.pieceLength, torrentFileInfo.piecesHashes, torrentFileInfo.fileName);
+    };
     return tieStruct(lhs) == tieStruct(rhs);
 }

@@ -1,5 +1,6 @@
 set(SOURCES
         src/HttpClientImpl.cpp
+        src/HttpClientFactory.cpp
         )
 
 add_library(httpClient ${SOURCES})
