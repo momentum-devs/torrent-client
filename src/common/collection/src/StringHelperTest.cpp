@@ -3,6 +3,7 @@
 #include "gtest/gtest.h"
 
 using namespace ::testing;
+using namespace common::collection;
 
 class StringHelperTest : public Test
 {

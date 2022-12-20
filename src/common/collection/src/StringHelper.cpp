@@ -2,6 +2,8 @@
 
 #include "boost/algorithm/string.hpp"
 
+namespace common::collection
+{
 std::string join(const std::vector<std::string>& contentWithLines, const std::string& joinWith)
 {
     return boost::algorithm::join(contentWithLines, joinWith);
@@ -78,4 +80,5 @@ void trim(std::string& line)
 bool compareCaseInsensitive(const std::string& s1, const std::string& s2)
 {
     return getLowerCases(s1) == getLowerCases(s2);
+}
 }

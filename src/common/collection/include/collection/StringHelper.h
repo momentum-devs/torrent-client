@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+namespace common::collection
+{
 const std::string endOfLine{"\n"};
 
 std::string join(const std::vector<std::string>& contentWithLines, const std::string& joinWith = endOfLine);
@@ -17,3 +19,4 @@ std::string substring(const std::string& line, size_t startIndex, size_t endInde
 std::string getLowerCases(const std::string&);
 void trim(std::string&);
 bool compareCaseInsensitive(const std::string&, const std::string&);
+}
