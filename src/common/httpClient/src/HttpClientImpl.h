@@ -2,8 +2,11 @@
 
 #include "HttpClient.h"
 
-class CprHttpClient : public HttpClient
+namespace common::httpClient
+{
+class HttpClientImpl : public HttpClient
 {
 public:
     HttpResponse get(const HttpGetRequestPayload&) const override;
 };
+}

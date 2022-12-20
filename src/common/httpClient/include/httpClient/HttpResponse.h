@@ -2,6 +2,8 @@
 
 #include <ostream>
 
+namespace common::httpClient
+{
 struct HttpResponse
 {
     int statusCode;
@@ -11,4 +13,5 @@ struct HttpResponse
 inline bool operator==(const HttpResponse& lhs, const HttpResponse& rhs)
 {
     return (lhs.statusCode == rhs.statusCode && lhs.data == rhs.data);
+}
 }

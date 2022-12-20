@@ -4,8 +4,10 @@
 #include <optional>
 #include <string>
 
-#include "StlOperators.h"
+#include "collection/StlOperators.h"
 
+namespace common::httpClient
+{
 struct HttpGetRequestPayload
 {
     std::string url;
@@ -22,4 +24,5 @@ inline std::ostream& operator<<(std::ostream& os, const HttpGetRequestPayload& g
 {
     return os << "{url: " << getPayload.url << ", headers: " << getPayload.headers
               << ", queries: " << getPayload.queries << "}";
+}
 }

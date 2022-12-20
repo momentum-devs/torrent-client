@@ -1,8 +1,10 @@
-#include "CprHttpClient.h"
+#include "HttpClientImpl.h"
 
 #include <cpr/cpr.h>
 
-HttpResponse CprHttpClient::get(const HttpGetRequestPayload& payload) const
+namespace common::httpClient
+{
+HttpResponse HttpClientImpl::get(const HttpGetRequestPayload& payload) const
 {
     auto queryParameters = cpr::Parameters{};
 
@@ -27,4 +29,5 @@ HttpResponse CprHttpClient::get(const HttpGetRequestPayload& payload) const
     cpr::Response response = cpr::Get(cpr::Url{payload.url}, queryParameters, headers);
 
     return {static_cast<int>(response.status_code), response.text};
+}
 }

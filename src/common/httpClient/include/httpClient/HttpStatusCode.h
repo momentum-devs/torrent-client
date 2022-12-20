@@ -3,6 +3,8 @@
 #include <map>
 #include <ostream>
 
+namespace common::httpClient
+{
 enum HttpStatusCode
 {
     Ok = 200,
@@ -17,4 +19,5 @@ inline std::ostream& operator<<(std::ostream& os, const HttpStatusCode& httpStat
                                                                     {HttpStatusCode::Unauthorized, "Unauthorized"}};
 
     return os << "HttpStatusCode::" << statusCodeToStringMapping.at(httpStatusCode);
+}
 }

@@ -3,6 +3,8 @@
 #include "HttpGetRequestPayload.h"
 #include "HttpResponse.h"
 
+namespace common::httpClient
+{
 class HttpClient
 {
 public:
@@ -10,3 +12,4 @@ public:
 
     virtual HttpResponse get(const HttpGetRequestPayload&) const = 0;
 };
+}
