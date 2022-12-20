@@ -1,4 +1,3 @@
-#include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -7,9 +6,9 @@
 #include "fmt/format.h"
 #include "HandshakeMessageSerializer.h"
 #include "httpClient/HttpClientFactory.h"
-#include "PeerConnector.h"
 #include "PeerIdGenerator.h"
-#include "PeerRetrieverImpl.h"
+#include "PeersRetrieverImpl.h"
+#include "TorrentClient.h"
 #include "TorrentFileDeserializerImpl.h"
 
 int main(int argc, char* argv[])
@@ -53,33 +52,13 @@ int main(int argc, char* argv[])
 
     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer =
         std::make_unique<AnnounceResponseDeserializerImpl>();
+    std::unique_ptr<PeersRetriever> peerRetriever =
+        std::make_unique<PeersRetrieverImpl>(std::move(httpClient), std::move(responseDeserializer));
 
-    std::unique_ptr<PeerRetriever> peerRetriever =
-        std::make_unique<PeerRetrieverImpl>(std::move(httpClient), std::move(responseDeserializer));
+    TorrentClient torrentClient{std::move(fileSystemService), std::move(torrentFileDeserializer), std::move(httpClient),
+                                std::move(responseDeserializer), std::move(peerRetriever)};
 
-    auto retrievePeersPayload = RetrievePeersPayload{torrentFileInfo.announce,
-                                                     torrentFileInfo.infoHash,
-                                                     PeerIdGenerator::generate(),
-                                                     "0",
-                                                     "0",
-                                                     "0",
-                                                     std::to_string(torrentFileInfo.length),
-                                                     "1"};
-
-    auto response = peerRetriever->retrievePeers(retrievePeersPayload);
-
-    std::cout << "Get list of " << response.peersEndpoints.size() << " peers" << std::endl;
-
-    auto firstPeerEndpoint = response.peersEndpoints[9];
-
-    boost::asio::io_context context;
-
-    auto handshakeMessage =
-        HandshakeMessage{"BitTorrent protocol", torrentFileInfo.infoHash, PeerIdGenerator::generate()};
-
-    PeerConnector peerConnector = PeerConnector{context, firstPeerEndpoint, handshakeMessage, numberOfPieces};
-
-    context.run();
+    torrentClient.download(torrentFilePath);
 
     return 0;
 }

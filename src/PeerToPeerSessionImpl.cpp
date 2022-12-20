@@ -1,15 +1,30 @@
-#include "PeerConnector.h"
+#include "PeerToPeerSessionImpl.h"
 
 #include <bitset>
 #include <iostream>
+#include <utility>
 
 #include "errors/PeerConnectionError.h"
 #include "HandshakeMessageSerializer.h"
 #include "MessageSerializer.h"
 
-PeerConnector::PeerConnector(boost::asio::io_context& ioContext, const PeerEndpoint& peerEndpoint,
-                             const HandshakeMessage& handshakeMessage, unsigned numberOfPiecesInit)
-    : socket(ioContext), numberOfPieces{numberOfPiecesInit}
+namespace
+{
+using iterator = boost::asio::buffers_iterator<boost::asio::streambuf::const_buffers_type>;
+
+std::pair<iterator, bool> messageMatch(iterator begin, iterator end);
+}
+
+PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext, unsigned numberOfPiecesInit,
+                                             PeerEndpoint peerEndpointInit, std::string peerIdInit)
+    : socket(ioContext),
+      numberOfPieces{numberOfPiecesInit},
+      peerEndpoint{std::move(peerEndpointInit)},
+      peerId{std::move(peerIdInit)}
+{
+}
+
+void PeerToPeerSessionImpl::startSession(const std::string& infoHash)
 {
     boost::asio::ip::address address = boost::asio::ip::make_address(peerEndpoint.address);
 
@@ -26,10 +41,12 @@ PeerConnector::PeerConnector(boost::asio::io_context& ioContext, const PeerEndpo
 
     std::cout << "Connected to: " << endpoint << std::endl;
 
+    auto handshakeMessage = HandshakeMessage{"BitTorrent protocol", infoHash, peerId};
+
     sendHandshake(handshakeMessage);
 }
 
-void PeerConnector::sendHandshake(const HandshakeMessage& handshakeMessage)
+void PeerToPeerSessionImpl::sendHandshake(const HandshakeMessage& handshakeMessage)
 {
     auto serializedHandshakeMessage = HandshakeMessageSerializer().serialize(handshakeMessage);
 
@@ -38,10 +55,10 @@ void PeerConnector::sendHandshake(const HandshakeMessage& handshakeMessage)
 
     boost::asio::async_write(
         socket, boost::asio::buffer(serializedHandshakeMessage),
-        std::bind(&PeerConnector::onWriteHandshake, this, std::placeholders::_1, std::placeholders::_2));
+        std::bind(&PeerToPeerSessionImpl::onWriteHandshake, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void PeerConnector::onWriteHandshake(boost::system::error_code error, std::size_t bytes_transferred)
+void PeerToPeerSessionImpl::onWriteHandshake(boost::system::error_code error, std::size_t bytes_transferred)
 {
     std::cout << "Write handshake to " << socket.remote_endpoint() << ": " << error.message()
               << ", bytes transferred: " << bytes_transferred << std::endl;
@@ -50,10 +67,10 @@ void PeerConnector::onWriteHandshake(boost::system::error_code error, std::size_
 
     boost::asio::async_read(
         socket, response, boost::asio::transfer_exactly(numberOfBytesInHandshake),
-        std::bind(&PeerConnector::onReadHandshake, this, std::placeholders::_1, std::placeholders::_2));
+        std::bind(&PeerToPeerSessionImpl::onReadHandshake, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void PeerConnector::onReadHandshake(boost::system::error_code error, std::size_t bytes_transferred)
+void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error, std::size_t bytes_transferred)
 {
     std::string data{std::istreambuf_iterator<char>(&response), std::istreambuf_iterator<char>()};
 
@@ -67,11 +84,11 @@ void PeerConnector::onReadHandshake(boost::system::error_code error, std::size_t
                             { onReadBitfieldMessage(errorCode, bytes); });
 }
 
-void PeerConnector::onReadBitfieldMessage(boost::system::error_code error, std::size_t bytes_transferred)
+void PeerToPeerSessionImpl::onReadBitfieldMessage(boost::system::error_code error, std::size_t bytes_transferred)
 {
     std::string data{std::istreambuf_iterator<char>(&response), std::istreambuf_iterator<char>()};
 
-    for (int i = 5; i < data.size(); i++)
+    for (size_t i = 5; i < data.size(); i++)
     {
         std::cout << static_cast<int>(static_cast<unsigned char>(data[i])) << " ";
     }
@@ -85,10 +102,10 @@ void PeerConnector::onReadBitfieldMessage(boost::system::error_code error, std::
 
     boost::asio::async_write(
         socket, boost::asio::buffer(serializedUnchokeMessage),
-        std::bind(&PeerConnector::onWriteUnchokeMessage, this, std::placeholders::_1, std::placeholders::_2));
+        std::bind(&PeerToPeerSessionImpl::onWriteUnchokeMessage, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void PeerConnector::onWriteUnchokeMessage(boost::system::error_code error, std::size_t bytes_transferred)
+void PeerToPeerSessionImpl::onWriteUnchokeMessage(boost::system::error_code error, std::size_t bytes_transferred)
 {
     std::cout << "Write unchoke message to " << socket.remote_endpoint() << ": " << error.message()
               << ", bytes transferred: " << bytes_transferred << std::endl;
@@ -97,13 +114,44 @@ void PeerConnector::onWriteUnchokeMessage(boost::system::error_code error, std::
 
     auto serializedInterestedMessage = MessageSerializer().serialize(interestedMessage);
 
-    boost::asio::async_write(
-        socket, boost::asio::buffer(serializedInterestedMessage),
-        std::bind(&PeerConnector::onWriteInterestedMessage, this, std::placeholders::_1, std::placeholders::_2));
+    boost::asio::async_write(socket, boost::asio::buffer(serializedInterestedMessage),
+                             std::bind(&PeerToPeerSessionImpl::onWriteInterestedMessage, this, std::placeholders::_1,
+                                       std::placeholders::_2));
 }
 
-void PeerConnector::onWriteInterestedMessage(boost::system::error_code error, std::size_t bytes_transferred)
+void PeerToPeerSessionImpl::onWriteInterestedMessage(boost::system::error_code error, std::size_t bytes_transferred)
 {
     std::cout << "Write interested message to " << socket.remote_endpoint() << ": " << error.message()
               << ", bytes transferred: " << bytes_transferred << std::endl;
+}
+
+void PeerToPeerSessionImpl::readMessage()
+{
+    boost::asio::async_read_until(
+        socket, response, messageMatch,
+        std::bind(&PeerToPeerSessionImpl::onReadMessage, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::size_t bytes_transferred) {}
+
+namespace
+{
+std::pair<iterator, bool> messageMatch(iterator begin, iterator end)
+{
+    auto dataSize = end - begin;
+
+    if (dataSize < 5)
+    {
+        return {begin, false};
+    }
+
+    int messageLength = (*begin << 24) + (*(begin + 1) << 16) + (*(begin + 2) << 8) + *(begin + 3);
+
+    if (dataSize < messageLength + 4)
+    {
+        return {begin, false};
+    }
+
+    return {begin + messageLength + 4, true};
+}
 }

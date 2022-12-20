@@ -4,12 +4,12 @@
 
 #include "AnnounceResponseDeserializer.h"
 #include "httpClient/HttpClient.h"
-#include "PeerRetriever.h"
+#include "PeersRetriever.h"
 
-class PeerRetrieverImpl : public PeerRetriever
+class PeersRetrieverImpl : public PeersRetriever
 {
 public:
-    PeerRetrieverImpl(std::unique_ptr<common::httpClient::HttpClient>, std::unique_ptr<AnnounceResponseDeserializer>);
+    PeersRetrieverImpl(std::unique_ptr<common::httpClient::HttpClient>, std::unique_ptr<AnnounceResponseDeserializer>);
 
     RetrievePeersResponse retrievePeers(const RetrievePeersPayload& payload) override;
 

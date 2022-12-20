@@ -25,3 +25,11 @@ std::string MessageSerializer::serialize(const Message& message) const
 
     return serializedMessage;
 }
+Message MessageSerializer::deserialize(const std::string& message) const
+{
+    auto messageId = MessageId(static_cast<unsigned int>(static_cast<unsigned char>(message[4])));
+    
+    auto messagePayload = message.substr(5, message.size() - 5);
+
+    return Message{messageId, messagePayload};
+}

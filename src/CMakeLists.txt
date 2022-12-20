@@ -2,18 +2,19 @@ add_subdirectory(common)
 
 set(SOURCES
         TorrentFileDeserializerImpl.cpp
-        PeerRetrieverImpl.cpp
+        PeersRetrieverImpl.cpp
         HexEncoder.cpp
         PeerIdGenerator.cpp
         AnnounceResponseDeserializerImpl.cpp
         HandshakeMessageSerializer.cpp
-        PeerConnector.cpp
+        PeerToPeerSessionImpl.cpp
         MessageSerializer.cpp
+        TorrentClient.cpp
         Bitfield.cpp
         )
 
 set(UT_SOURCES
-        PeerRetrieverImplTest.cpp
+        PeersRetrieverImplTest.cpp
         TorrentFileDeserializerImplTest.cpp
         AnnounceResponseDeserializerImplTest.cpp
         HandshakeMessageSerializerTest.cpp

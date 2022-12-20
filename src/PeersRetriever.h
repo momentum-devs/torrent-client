@@ -5,10 +5,10 @@
 #include "RetrievePeersPayload.h"
 #include "RetrievePeersResponse.h"
 
-class PeerRetriever
+class PeersRetriever
 {
 public:
-    virtual ~PeerRetriever() = default;
+    virtual ~PeersRetriever() = default;
 
     virtual RetrievePeersResponse retrievePeers(const RetrievePeersPayload& payload) = 0;
 };
