@@ -7,6 +7,30 @@
 #include "HandshakeMessageSerializer.h"
 #include "MessageSerializer.h"
 
+namespace
+{
+using iterator = boost::asio::buffers_iterator<boost::asio::streambuf::const_buffers_type>;
+
+std::pair<iterator, bool> messageMatch(iterator begin, iterator end)
+{
+    auto dataSize = end - begin;
+
+    if (dataSize < 5)
+    {
+        return {begin, false};
+    }
+
+    int messageLength = (*begin << 24) + (*(begin + 1) << 16) + (*(begin + 2) << 8) + *(begin + 3);
+
+    if (dataSize < messageLength + 4)
+    {
+        return {begin, false};
+    }
+
+    return {begin + messageLength + 4, true};
+}
+}
+
 PeerConnector::PeerConnector(boost::asio::io_context& ioContext, const PeerEndpoint& peerEndpoint,
                              const HandshakeMessage& handshakeMessage, unsigned numberOfPiecesInit)
     : socket(ioContext), numberOfPieces{numberOfPiecesInit}
@@ -107,3 +131,12 @@ void PeerConnector::onWriteInterestedMessage(boost::system::error_code error, st
     std::cout << "Write interested message to " << socket.remote_endpoint() << ": " << error.message()
               << ", bytes transferred: " << bytes_transferred << std::endl;
 }
+
+void PeerConnector::readMessage()
+{
+    boost::asio::async_read_until(
+        socket, response, messageMatch,
+        std::bind(&PeerConnector::onReadMessage, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void PeerConnector::onReadMessage(boost::system::error_code error, std::size_t bytes_transferred) {}

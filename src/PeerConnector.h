@@ -16,6 +16,8 @@ private:
     void onReadBitfieldMessage(boost::system::error_code error, std::size_t bytes_transferred);
     void onWriteUnchokeMessage(boost::system::error_code error, std::size_t bytes_transferred);
     void onWriteInterestedMessage(boost::system::error_code error, std::size_t bytes_transferred);
+    void readMessage();
+    void onReadMessage(boost::system::error_code error, std::size_t bytes_transferred);
 
     boost::asio::ip::tcp::socket socket;
     std::string request;
