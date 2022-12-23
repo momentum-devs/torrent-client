@@ -1,7 +1,7 @@
 #include <boost/asio.hpp>
 
+#include "../PeerEndpoint.h"
 #include "HandshakeMessage.h"
-#include "PeerEndpoint.h"
 #include "PeerToPeerSession.h"
 
 class PeerToPeerSessionImpl : public PeerToPeerSession

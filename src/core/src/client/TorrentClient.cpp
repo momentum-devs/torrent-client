@@ -1,9 +1,9 @@
 #include "TorrentClient.h"
 
+#include "../session/HandshakeMessage.h"
+#include "../session/PeerToPeerSessionImpl.h"
 #include "fmt/format.h"
-#include "HandshakeMessage.h"
 #include "PeerIdGenerator.h"
-#include "PeerToPeerSessionImpl.h"
 
 TorrentClient::TorrentClient(std::unique_ptr<common::fileSystem::FileSystemService> fileSystemServiceInit,
                              std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializerInit,

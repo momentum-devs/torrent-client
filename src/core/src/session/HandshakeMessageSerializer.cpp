@@ -1,6 +1,6 @@
 #include "HandshakeMessageSerializer.h"
 
-#include "HexEncoder.h"
+#include "../HexEncoder.h"
 
 std::string HandshakeMessageSerializer::serialize(const HandshakeMessage& message) const
 {

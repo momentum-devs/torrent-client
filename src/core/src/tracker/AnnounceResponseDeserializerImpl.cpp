@@ -1,6 +1,6 @@
 #include "AnnounceResponseDeserializerImpl.h"
 
-#include "BencodeHelper.h"
+#include "../BencodeHelper.h"
 
 namespace
 {
@@ -33,7 +33,7 @@ std::vector<PeerEndpoint> AnnounceResponseDeserializerImpl::getPeersEndpoints(co
         auto addressOctet2 = static_cast<unsigned>(static_cast<unsigned char>(peers[i + 1]));
         auto addressOctet3 = static_cast<unsigned>(static_cast<unsigned char>(peers[i + 2]));
         auto addressOctet4 = static_cast<unsigned>(static_cast<unsigned char>(peers[i + 3]));
-        
+
         auto portOctet1 = static_cast<unsigned>(static_cast<unsigned char>(peers[i + 4]));
         auto portOctet2 = static_cast<unsigned>(static_cast<unsigned char>(peers[i + 5]));
 

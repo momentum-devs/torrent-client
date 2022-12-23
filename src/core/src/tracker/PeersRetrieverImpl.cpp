@@ -1,6 +1,6 @@
 #include "PeersRetrieverImpl.h"
 
-#include "HexEncoder.h"
+#include "../HexEncoder.h"
 
 PeersRetrieverImpl::PeersRetrieverImpl(std::unique_ptr<common::httpClient::HttpClient> httpClientInit,
                                        std::unique_ptr<AnnounceResponseDeserializer> responseDeserializerInit)

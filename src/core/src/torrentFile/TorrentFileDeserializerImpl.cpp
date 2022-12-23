@@ -2,8 +2,8 @@
 
 #include <boost/compute/detail/sha1.hpp>
 
-#include "BencodeHelper.h"
-#include "HexEncoder.h"
+#include "../BencodeHelper.h"
+#include "../HexEncoder.h"
 #include "TorrentFileInfo.h"
 
 namespace

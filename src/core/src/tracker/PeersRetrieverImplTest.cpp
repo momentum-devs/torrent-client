@@ -5,8 +5,8 @@
 #include "AnnounceResponseDeserializerMock.h"
 #include "httpClient/HttpClientMock.h"
 
-#include "HexEncoder.h"
-#include "PeerIdGenerator.h"
+#include "../client/PeerIdGenerator.h"
+#include "../HexEncoder.h"
 
 using namespace ::testing;
 

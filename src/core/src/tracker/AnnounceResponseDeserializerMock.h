@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gmock/gmock.h"
+#include "../../../../externals/googletest/googlemock/include/gmock/gmock.h"
 
 #include "AnnounceResponseDeserializer.h"
 

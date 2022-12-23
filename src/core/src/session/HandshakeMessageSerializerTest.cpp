@@ -2,8 +2,8 @@
 
 #include "gtest/gtest.h"
 
-#include "HexEncoder.h"
-#include "PeerIdGenerator.h"
+#include "../client/PeerIdGenerator.h"
+#include "../HexEncoder.h"
 
 using namespace ::testing;
 

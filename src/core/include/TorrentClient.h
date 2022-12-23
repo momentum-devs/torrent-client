@@ -3,11 +3,11 @@
 #include <memory>
 #include <string>
 
-#include "AnnounceResponseDeserializer.h"
+#include "../src/torrentFile/TorrentFileDeserializer.h"
+#include "../src/tracker/AnnounceResponseDeserializer.h"
+#include "../src/tracker/PeersRetriever.h"
 #include "fileSystem/FileSystemService.h"
 #include "httpClient/HttpClient.h"
-#include "PeersRetriever.h"
-#include "TorrentFileDeserializer.h"
 
 class TorrentClient
 {

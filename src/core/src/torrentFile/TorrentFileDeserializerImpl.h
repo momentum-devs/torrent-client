@@ -1,10 +1,10 @@
 #pragma once
 
-#include "bencode.hpp"
+#include "../../../../externals/bencode.hpp/include/bencode.hpp"
 #include "TorrentFileDeserializer.h"
 
-
-class TorrentFileDeserializerImpl: public TorrentFileDeserializer{
+class TorrentFileDeserializerImpl : public TorrentFileDeserializer
+{
 public:
     TorrentFileInfo deserialize(const std::string&) override;
 

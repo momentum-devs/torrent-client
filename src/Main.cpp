@@ -1,15 +1,15 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 
-#include "AnnounceResponseDeserializerImpl.h"
+#include "core/include/TorrentClient.h"
+#include "core/src/client/PeerIdGenerator.h"
+#include "core/src/session/HandshakeMessageSerializer.h"
+#include "core/src/torrentFile/TorrentFileDeserializerImpl.h"
+#include "core/src/tracker/AnnounceResponseDeserializerImpl.h"
+#include "core/src/tracker/PeersRetrieverImpl.h"
 #include "fileSystem/FileSystemServiceFactory.h"
 #include "fmt/format.h"
-#include "HandshakeMessageSerializer.h"
 #include "httpClient/HttpClientFactory.h"
-#include "PeerIdGenerator.h"
-#include "PeersRetrieverImpl.h"
-#include "TorrentClient.h"
-#include "TorrentFileDeserializerImpl.h"
 
 int main(int argc, char* argv[])
 {
@@ -37,21 +37,14 @@ int main(int argc, char* argv[])
     std::unique_ptr<common::fileSystem::FileSystemService> fileSystemService =
         common::fileSystem::FileSystemServiceFactory().createFileSystemService();
 
-    auto torrentFileContent = fileSystemService->read(torrentFilePath);
-
     std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializer = std::make_unique<TorrentFileDeserializerImpl>();
-
-    auto torrentFileInfo = torrentFileDeserializer->deserialize(torrentFileContent);
-
-    const auto numberOfPieces = static_cast<unsigned>(torrentFileInfo.piecesHashes.size());
-
-    std::cout << fmt::format("File has {} pieces.", numberOfPieces) << std::endl;
 
     std::unique_ptr<common::httpClient::HttpClient> httpClient =
         common::httpClient::HttpClientFactory().createHttpClient();
 
     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer =
         std::make_unique<AnnounceResponseDeserializerImpl>();
+
     std::unique_ptr<PeersRetriever> peerRetriever =
         std::make_unique<PeersRetrieverImpl>(std::move(httpClient), std::move(responseDeserializer));
 
