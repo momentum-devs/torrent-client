@@ -2,8 +2,8 @@
 
 #include "gtest/gtest.h"
 
-#include "errors/InvalidBencodeFileFormatError.h"
-#include "errors/MissingTorrentInfo.h"
+#include "errors/InvalidBencodeFormatError.h"
+#include "errors/MissingBencodeFieldValue.h"
 #include "fileSystem/FileSystemServiceFactory.h"
 #include "fileSystem/GetProjectPath.h"
 
@@ -56,36 +56,40 @@ TEST_F(TorrentFileDeserializerImplTest, deserializeTorrentFile)
 TEST_F(TorrentFileDeserializerImplTest, givenTorrentFileWithoutAnnounceField_throwsAnError)
 {
     ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutAnnounceFieldContent),
-                 errors::MissingTorrentInfo);
+                 errors::MissingBencodeFieldValue);
 }
 
 TEST_F(TorrentFileDeserializerImplTest, givenTorrentFileWithoutInfoField_throwsAnError)
 {
-    ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutInfoFieldContent), errors::MissingTorrentInfo);
+    ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutInfoFieldContent),
+                 errors::MissingBencodeFieldValue);
 }
 
 TEST_F(TorrentFileDeserializerImplTest, givenTorrentFileWithoutLengthField_throwsAnError)
 {
-    ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutLengthFieldContent), errors::MissingTorrentInfo);
+    ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutLengthFieldContent),
+                 errors::MissingBencodeFieldValue);
 }
 
 TEST_F(TorrentFileDeserializerImplTest, givenTorrentFileWithoutNameField_throwsAnError)
 {
-    ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutNameFieldContent), errors::MissingTorrentInfo);
+    ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutNameFieldContent),
+                 errors::MissingBencodeFieldValue);
 }
 
 TEST_F(TorrentFileDeserializerImplTest, givenTorrentFileWithoutPieceLengthField_throwsAnError)
 {
     ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutPieceLengthFieldContent),
-                 errors::MissingTorrentInfo);
+                 errors::MissingBencodeFieldValue);
 }
 
 TEST_F(TorrentFileDeserializerImplTest, givenTorrentFileWithoutPiecesField_throwsAnError)
 {
-    ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutPiecesFieldContent), errors::MissingTorrentInfo);
+    ASSERT_THROW(torrentFileDeserializer.deserialize(torrentFileWithoutPiecesFieldContent),
+                 errors::MissingBencodeFieldValue);
 }
 
 TEST_F(TorrentFileDeserializerImplTest, givenInvalidBencodeFile_throwsAnError)
 {
-    ASSERT_THROW(torrentFileDeserializer.deserialize(invalidBencodeFileContent), errors::InvalidBencodeFileFormatError);
+    ASSERT_THROW(torrentFileDeserializer.deserialize(invalidBencodeFileContent), errors::InvalidBencodeFormatError);
 }

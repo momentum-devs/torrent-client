@@ -1,15 +1,25 @@
 #include "AnnounceResponseDeserializerImpl.h"
 
-#include "../BencodeHelper.h"
+#include "fmt/format.h"
 
+#include "bencode.hpp"
+#include "errors/InvalidBencodeFormatError.h"
+#include "errors/MissingBencodeDictionary.h"
+#include "errors/MissingBencodeFieldValue.h"
+
+namespace core
+{
 namespace
 {
+bencode::data parseBencode(const std::string& bencodeText);
+bencode::dict getDictionary(const bencode::data& data);
+template <typename T>
+T getFieldValue(const bencode::dict& bencodeDictionary, const std::string& fieldName);
+
 constexpr auto intervalFieldName = "interval";
 constexpr auto peersFieldName = "peers";
 }
 
-namespace core
-{
 RetrievePeersResponse AnnounceResponseDeserializerImpl::deserialize(const std::string& response) const
 {
     auto bencodeData = parseBencode(response);
@@ -46,5 +56,45 @@ std::vector<PeerEndpoint> AnnounceResponseDeserializerImpl::getPeersEndpoints(co
     }
 
     return peersEndpoints;
+}
+
+namespace
+{
+bencode::data parseBencode(const std::string& bencodeText)
+{
+    try
+    {
+        return bencode::decode(bencodeText);
+    }
+    catch (const std::exception& e)
+    {
+        throw errors::InvalidBencodeFormatError(e.what());
+    }
+}
+
+bencode::dict getDictionary(const bencode::data& data)
+{
+    try
+    {
+        return std::get<bencode::dict>(data);
+    }
+    catch (const std::exception& e)
+    {
+        throw errors::MissingBencodeDictionary{"Missing dictionary."};
+    }
+}
+
+template <typename T>
+T getFieldValue(const bencode::dict& bencodeDictionary, const std::string& fieldName)
+{
+    try
+    {
+        return std::get<T>(bencodeDictionary.at(fieldName));
+    }
+    catch (const std::exception& e)
+    {
+        throw errors::MissingBencodeFieldValue{fmt::format("Missing {} field.", fieldName)};
+    }
+}
 }
 }
