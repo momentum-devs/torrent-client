@@ -2,6 +2,8 @@
 
 #include "RetrievePeersResponse.h"
 
+namespace core
+{
 class AnnounceResponseDeserializer
 {
 public:
@@ -9,3 +11,4 @@ public:
 
     virtual RetrievePeersResponse deserialize(const std::string&) const = 0;
 };
+}

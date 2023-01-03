@@ -2,6 +2,8 @@
 
 #include "AnnounceResponseDeserializer.h"
 
+namespace core
+{
 class AnnounceResponseDeserializerImpl : public AnnounceResponseDeserializer
 {
 public:
@@ -10,3 +12,4 @@ public:
 private:
     std::vector<PeerEndpoint> getPeersEndpoints(const std::string& peers) const;
 };
+}

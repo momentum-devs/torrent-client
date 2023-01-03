@@ -2,9 +2,11 @@
 
 #include <vector>
 
-#include "../PeerEndpoint.h"
 #include "collection/StlOperators.h"
+#include "PeerEndpoint.h"
 
+namespace core
+{
 struct RetrievePeersResponse
 {
     long long interval;
@@ -20,4 +22,5 @@ inline std::ostream& operator<<(std::ostream& os, const RetrievePeersResponse& r
 {
     return os << "interval: " << retrievePeersResponse.interval
               << " peersEndpoints: " << retrievePeersResponse.peersEndpoints;
+}
 }

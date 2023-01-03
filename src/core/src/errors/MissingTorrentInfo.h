@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace errors
+namespace core::errors
 {
 struct MissingTorrentInfo : std::runtime_error
 {

@@ -5,6 +5,8 @@
 
 #include "collection/StlOperators.h"
 
+namespace core
+{
 struct TorrentFileInfo
 {
     std::string announce;
@@ -31,4 +33,5 @@ inline bool operator==(const TorrentFileInfo& lhs, const TorrentFileInfo& rhs)
                         torrentFileInfo.pieceLength, torrentFileInfo.piecesHashes, torrentFileInfo.fileName);
     };
     return tieStruct(lhs) == tieStruct(rhs);
+}
 }

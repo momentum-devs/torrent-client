@@ -3,6 +3,8 @@
 #include "bencode.hpp"
 #include "TorrentFileDeserializer.h"
 
+namespace core
+{
 class TorrentFileDeserializerImpl : public TorrentFileDeserializer
 {
 public:
@@ -12,3 +14,4 @@ private:
     std::string getInfoHash(bencode::dict&);
     std::vector<std::string> getPiecesHashes(bencode::dict&);
 };
+}

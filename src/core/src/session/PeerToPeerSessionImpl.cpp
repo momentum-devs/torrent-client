@@ -13,6 +13,8 @@ using iterator = boost::asio::buffers_iterator<boost::asio::streambuf::const_buf
 std::pair<iterator, bool> messageMatch(iterator begin, iterator end);
 }
 
+namespace core
+{
 PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext, unsigned numberOfPiecesInit,
                                              PeerEndpoint peerEndpointInit, std::string peerIdInit)
     : socket(ioContext),
@@ -132,6 +134,7 @@ void PeerToPeerSessionImpl::readMessage()
 
 void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code, std::size_t) {}
 
+}
 namespace
 {
 std::pair<iterator, bool> messageMatch(iterator begin, iterator end)

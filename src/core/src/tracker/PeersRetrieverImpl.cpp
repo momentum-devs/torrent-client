@@ -2,6 +2,8 @@
 
 #include "../HexEncoder.h"
 
+namespace core
+{
 PeersRetrieverImpl::PeersRetrieverImpl(std::unique_ptr<common::httpClient::HttpClient> httpClientInit,
                                        std::unique_ptr<AnnounceResponseDeserializer> responseDeserializerInit)
     : httpClient{std::move(httpClientInit)}, responseDeserializer{std::move(responseDeserializerInit)}
@@ -23,4 +25,5 @@ RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPaylo
     auto deserializedResponse = responseDeserializer->deserialize(response.data);
 
     return deserializedResponse;
+}
 }

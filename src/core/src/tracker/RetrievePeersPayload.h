@@ -5,6 +5,8 @@
 
 #include "collection/StlOperators.h"
 
+namespace core
+{
 struct RetrievePeersPayload
 {
     std::string announceUrl;
@@ -34,4 +36,5 @@ inline bool operator==(const RetrievePeersPayload& lhs, const RetrievePeersPaylo
                         retrievePeersPayload.left, retrievePeersPayload.compact);
     };
     return tieStruct(lhs) == tieStruct(rhs);
+}
 }

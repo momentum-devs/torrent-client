@@ -3,6 +3,7 @@
 #include "gtest/gtest.h"
 
 using namespace ::testing;
+using namespace core;
 
 namespace
 {
@@ -20,7 +21,7 @@ public:
 
 TEST_F(MessageSerializerTest, serializeUnchokeMessageWithoutPayload)
 {
-    const auto message = ::Message{MessageId::Unchoke, ""};
+    const auto message = core::Message{MessageId::Unchoke, ""};
 
     const auto serializedMessage = serializer.serialize(message);
 
@@ -34,7 +35,7 @@ TEST_F(MessageSerializerTest, serializeUnchokeMessageWithoutPayload)
 
 TEST_F(MessageSerializerTest, serializeUnchokeMessage)
 {
-    const auto message = ::Message{MessageId::Unchoke, payload};
+    const auto message = core::Message{MessageId::Unchoke, payload};
 
     const auto serializedMessage = serializer.serialize(message);
 
@@ -49,7 +50,7 @@ TEST_F(MessageSerializerTest, serializeUnchokeMessage)
 
 TEST_F(MessageSerializerTest, serializeInterestedMessage)
 {
-    const auto message = ::Message{MessageId::Interested, payload};
+    const auto message = core::Message{MessageId::Interested, payload};
 
     const auto serializedMessage = serializer.serialize(message);
 
@@ -64,7 +65,7 @@ TEST_F(MessageSerializerTest, serializeInterestedMessage)
 
 TEST_F(MessageSerializerTest, deserializeOutputFromSerializer)
 {
-    const auto message = ::Message{MessageId::Interested, payload};
+    const auto message = core::Message{MessageId::Interested, payload};
 
     const auto serializedMessage = serializer.serialize(message);
 

@@ -3,6 +3,8 @@
 #include <ostream>
 #include <string>
 
+namespace core
+{
 struct HandshakeMessage
 {
     std::string protocolIdentifier;
@@ -20,4 +22,5 @@ inline std::ostream& operator<<(std::ostream& os, const HandshakeMessage& handsh
 {
     return os << "protocolIdentifier: " << handshakeMessage.protocolIdentifier
               << " infoHash: " << handshakeMessage.infoHash << " peerId: " << handshakeMessage.peerId;
+}
 }

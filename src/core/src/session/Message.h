@@ -5,6 +5,8 @@
 
 #include "MessageId.h"
 
+namespace core
+{
 struct Message
 {
     MessageId id;
@@ -19,4 +21,5 @@ inline bool operator==(const Message& lhs, const Message& rhs)
 inline std::ostream& operator<<(std::ostream& os, const Message& message)
 {
     return os << "id: " << message.id << " payload: " << message.payload;
+}
 }

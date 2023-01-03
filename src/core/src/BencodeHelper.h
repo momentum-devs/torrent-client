@@ -1,10 +1,13 @@
 #pragma once
 
+#include "fmt/format.h"
+
 #include "bencode.hpp"
 #include "errors/InvalidBencodeFileFormatError.h"
 #include "errors/MissingTorrentInfo.h"
-#include "fmt/format.h"
 
+namespace core
+{
 inline bencode::data parseBencode(const std::string& bencodeText)
 {
     try
@@ -53,4 +56,5 @@ inline bencode::data getFieldValue<bencode::data>(const bencode::dict& bencodeDi
     {
         throw errors::MissingTorrentInfo{fmt::format("Missing {} field.", fieldName)};
     }
+}
 }

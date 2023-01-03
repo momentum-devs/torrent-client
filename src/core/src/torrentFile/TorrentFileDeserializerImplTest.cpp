@@ -8,6 +8,7 @@
 #include "fileSystem/GetProjectPath.h"
 
 using namespace ::testing;
+using namespace core;
 
 namespace
 {

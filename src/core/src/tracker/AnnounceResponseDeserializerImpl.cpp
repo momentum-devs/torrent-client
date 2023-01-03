@@ -8,6 +8,8 @@ constexpr auto intervalFieldName = "interval";
 constexpr auto peersFieldName = "peers";
 }
 
+namespace core
+{
 RetrievePeersResponse AnnounceResponseDeserializerImpl::deserialize(const std::string& response) const
 {
     auto bencodeData = parseBencode(response);
@@ -44,4 +46,5 @@ std::vector<PeerEndpoint> AnnounceResponseDeserializerImpl::getPeersEndpoints(co
     }
 
     return peersEndpoints;
+}
 }

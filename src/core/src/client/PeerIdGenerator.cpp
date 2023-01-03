@@ -2,6 +2,8 @@
 
 #include <random>
 
+namespace core
+{
 std::string PeerIdGenerator::generate()
 {
     std::string peerId = "-UT2021-";
@@ -18,4 +20,6 @@ std::string PeerIdGenerator::generate()
     }
 
     return peerId;
+}
+
 }

@@ -3,6 +3,8 @@
 #include <ostream>
 #include <string>
 
+namespace core
+{
 struct PeerEndpoint
 {
     std::string address;
@@ -17,4 +19,5 @@ inline bool operator==(const PeerEndpoint& lhs, const PeerEndpoint& rhs)
 inline std::ostream& operator<<(std::ostream& os, const PeerEndpoint& endpoint)
 {
     return os << "address: " << endpoint.address << " port: " << endpoint.port;
+}
 }

@@ -9,6 +9,9 @@
 #include "fileSystem/FileSystemService.h"
 #include "httpClient/HttpClient.h"
 
+namespace core
+{
+// TODO: add interface and factory
 class TorrentClient
 {
 public:
@@ -27,3 +30,4 @@ private:
     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer;
     std::unique_ptr<PeersRetriever> peerRetriever;
 };
+}

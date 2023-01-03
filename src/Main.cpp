@@ -8,11 +8,11 @@
 #include "core/src/tracker/AnnounceResponseDeserializerImpl.h"
 #include "core/src/tracker/PeersRetrieverImpl.h"
 #include "fileSystem/FileSystemServiceFactory.h"
-#include "fmt/format.h"
 #include "httpClient/HttpClientFactory.h"
 
 int main(int argc, char* argv[])
 {
+    // TODO: add parser class
     boost::program_options::options_description description;
 
     description.add_options()("torrent_file, t", boost::program_options::value<std::string>(),
@@ -37,19 +37,20 @@ int main(int argc, char* argv[])
     std::unique_ptr<common::fileSystem::FileSystemService> fileSystemService =
         common::fileSystem::FileSystemServiceFactory().createFileSystemService();
 
-    std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializer = std::make_unique<TorrentFileDeserializerImpl>();
+    std::unique_ptr<core::TorrentFileDeserializer> torrentFileDeserializer =
+        std::make_unique<core::TorrentFileDeserializerImpl>();
 
     std::unique_ptr<common::httpClient::HttpClient> httpClient =
         common::httpClient::HttpClientFactory().createHttpClient();
 
-    std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer =
-        std::make_unique<AnnounceResponseDeserializerImpl>();
+    std::unique_ptr<core::AnnounceResponseDeserializer> responseDeserializer =
+        std::make_unique<core::AnnounceResponseDeserializerImpl>();
 
-    std::unique_ptr<PeersRetriever> peerRetriever =
-        std::make_unique<PeersRetrieverImpl>(std::move(httpClient), std::move(responseDeserializer));
+    std::unique_ptr<core::PeersRetriever> peerRetriever =
+        std::make_unique<core::PeersRetrieverImpl>(std::move(httpClient), std::move(responseDeserializer));
 
-    TorrentClient torrentClient{std::move(fileSystemService), std::move(torrentFileDeserializer), std::move(httpClient),
-                                std::move(responseDeserializer), std::move(peerRetriever)};
+    core::TorrentClient torrentClient{std::move(fileSystemService), std::move(torrentFileDeserializer),
+                                      std::move(httpClient), std::move(responseDeserializer), std::move(peerRetriever)};
 
     torrentClient.download(torrentFilePath);
 

@@ -6,6 +6,8 @@
 #include "httpClient/HttpClient.h"
 #include "PeersRetriever.h"
 
+namespace core
+{
 class PeersRetrieverImpl : public PeersRetriever
 {
 public:
@@ -17,3 +19,4 @@ private:
     std::unique_ptr<common::httpClient::HttpClient> httpClient;
     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer;
 };
+}

@@ -1,5 +1,7 @@
 #include "Bitfield.h"
 
+namespace core
+{
 Bitfield::Bitfield(const std::basic_string<unsigned char>& dataInit) : data{initializeData(dataInit)} {}
 
 bool Bitfield::hasBitSet(int bitIndex) const
@@ -22,4 +24,5 @@ std::vector<bool> Bitfield::initializeData(const std::basic_string<unsigned char
     }
 
     return bits;
+}
 }

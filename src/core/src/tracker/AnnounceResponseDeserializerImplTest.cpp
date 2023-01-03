@@ -7,6 +7,7 @@
 
 using namespace ::testing;
 using namespace common::fileSystem;
+using namespace core;
 
 namespace
 {

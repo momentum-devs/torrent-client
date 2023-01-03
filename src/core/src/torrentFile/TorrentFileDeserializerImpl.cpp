@@ -16,6 +16,8 @@ constexpr auto pieceLengthFieldName = "piece length";
 constexpr auto lengthFieldName = "length";
 }
 
+namespace core
+{
 TorrentFileInfo TorrentFileDeserializerImpl::deserialize(const std::string& torrentFileContent)
 {
     auto bencodeData = parseBencode(torrentFileContent);
@@ -66,4 +68,5 @@ std::vector<std::string> TorrentFileDeserializerImpl::getPiecesHashes(bencode::d
     }
 
     return piecesHashesVector;
+}
 }

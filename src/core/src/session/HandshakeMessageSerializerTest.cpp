@@ -6,6 +6,7 @@
 #include "../HexEncoder.h"
 
 using namespace ::testing;
+using namespace core;
 
 namespace
 {

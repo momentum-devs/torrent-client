@@ -4,6 +4,8 @@
 
 #include "TorrentFileInfo.h"
 
+namespace core
+{
 class TorrentFileDeserializer
 {
 public:
@@ -11,3 +13,4 @@ public:
 
     virtual TorrentFileInfo deserialize(const std::string&) = 0;
 };
+}

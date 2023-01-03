@@ -5,6 +5,8 @@
 #include "RetrievePeersPayload.h"
 #include "RetrievePeersResponse.h"
 
+namespace core
+{
 class PeersRetriever
 {
 public:
@@ -12,3 +14,4 @@ public:
 
     virtual RetrievePeersResponse retrievePeers(const RetrievePeersPayload& payload) = 0;
 };
+}

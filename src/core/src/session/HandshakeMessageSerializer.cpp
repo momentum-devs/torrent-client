@@ -2,6 +2,8 @@
 
 #include "../HexEncoder.h"
 
+namespace core
+{
 std::string HandshakeMessageSerializer::serialize(const HandshakeMessage& message) const
 {
     std::string serializedMessage;
@@ -13,4 +15,5 @@ std::string HandshakeMessageSerializer::serialize(const HandshakeMessage& messag
     serializedMessage += message.peerId;
 
     return serializedMessage;
+}
 }

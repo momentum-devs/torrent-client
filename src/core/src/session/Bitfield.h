@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+namespace core
+{
 class Bitfield
 {
 public:
@@ -15,3 +17,4 @@ private:
 
     const std::vector<bool> data;
 };
+}

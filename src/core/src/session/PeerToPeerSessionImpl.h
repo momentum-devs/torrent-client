@@ -1,9 +1,11 @@
 #include <boost/asio.hpp>
 
-#include "../PeerEndpoint.h"
+#include "../tracker/PeerEndpoint.h"
 #include "HandshakeMessage.h"
 #include "PeerToPeerSession.h"
 
+namespace core
+{
 class PeerToPeerSessionImpl : public PeerToPeerSession
 {
 public:
@@ -28,3 +30,4 @@ private:
     PeerEndpoint peerEndpoint;
     const std::string peerId;
 };
+}

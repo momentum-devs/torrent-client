@@ -2,6 +2,8 @@
 
 #include <string>
 
+namespace core
+{
 class PeerToPeerSession
 {
 public:
@@ -9,3 +11,4 @@ public:
 
     virtual void startSession(const std::string& hashInfo) = 0;
 };
+}

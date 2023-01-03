@@ -1,10 +1,13 @@
 #include "TorrentClient.h"
 
+#include "fmt/format.h"
+
 #include "../session/HandshakeMessage.h"
 #include "../session/PeerToPeerSessionImpl.h"
-#include "fmt/format.h"
 #include "PeerIdGenerator.h"
 
+namespace core
+{
 TorrentClient::TorrentClient(std::unique_ptr<common::fileSystem::FileSystemService> fileSystemServiceInit,
                              std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializerInit,
                              std::unique_ptr<common::httpClient::HttpClient> httpClientInit,
@@ -53,4 +56,5 @@ void TorrentClient::download(const std::string& torrentFilePath)
     peerConnector->startSession(torrentFileInfo.infoHash);
 
     context.run();
+}
 }

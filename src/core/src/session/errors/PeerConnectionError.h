@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace errors
+namespace core::errors
 {
 struct PeerConnectionError : std::runtime_error
 {

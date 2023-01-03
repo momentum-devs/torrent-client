@@ -6,6 +6,8 @@
 
 #include "errors/MessageIdMappingNotFoundError.h"
 
+namespace core
+{
 enum MessageId
 {
     Choke,
@@ -46,4 +48,5 @@ inline std::string toString(MessageId messageId)
 inline std::ostream& operator<<(std::ostream& os, MessageId messageId)
 {
     return os << "MessageId::" << toString(messageId) << ", value: " << static_cast<unsigned int>(messageId);
+}
 }
