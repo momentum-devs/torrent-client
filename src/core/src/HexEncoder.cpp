@@ -21,7 +21,7 @@ std::string HexEncoder::decode(const std::string& data)
     for (int i = 0; i < hashLength; i += 2)
     {
         std::string byte = data.substr(i, 2);
-        char c = (char) (int) strtol(byte.c_str(), nullptr, 16);
+        char c = (char)(int)strtol(byte.c_str(), nullptr, 16);
         decodedHexString.push_back(c);
     }
     return decodedHexString;

@@ -1,8 +1,6 @@
 #include "PeerToPeerSessionImpl.h"
 
-#include <bitset>
 #include <iostream>
-#include <utility>
 
 #include "errors/PeerConnectionError.h"
 #include "HandshakeMessageSerializer.h"
@@ -132,7 +130,7 @@ void PeerToPeerSessionImpl::readMessage()
         std::bind(&PeerToPeerSessionImpl::onReadMessage, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::size_t bytes_transferred) {}
+void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code, std::size_t) {}
 
 namespace
 {

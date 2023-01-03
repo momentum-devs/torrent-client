@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../../externals/bencode.hpp/include/bencode.hpp"
+#include "bencode.hpp"
 #include "TorrentFileDeserializer.h"
 
 class TorrentFileDeserializerImpl : public TorrentFileDeserializer

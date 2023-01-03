@@ -11,5 +11,3 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         ${BENCODE_INCLUDE_DIR})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC core fmt::fmt ${Boost_LIBRARIES} collection fileSystem httpClient)
-
-target_compile_options(${PROJECT_NAME} PUBLIC ${FLAGS})

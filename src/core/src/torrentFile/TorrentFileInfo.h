@@ -3,7 +3,7 @@
 #include <ostream>
 #include <string>
 
-#include "../../../common/collection/include/collection/StlOperators.h"
+#include "collection/StlOperators.h"
 
 struct TorrentFileInfo
 {

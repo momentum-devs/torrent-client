@@ -4,7 +4,8 @@
 
 #include "TorrentFileInfo.h"
 
-class TorrentFileDeserializer{
+class TorrentFileDeserializer
+{
 public:
     virtual ~TorrentFileDeserializer() = default;
 

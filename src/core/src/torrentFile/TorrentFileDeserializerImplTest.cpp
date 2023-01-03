@@ -2,8 +2,8 @@
 
 #include "gtest/gtest.h"
 
-#include "../../errors/InvalidBencodeFileFormatError.h"
-#include "../../errors/MissingTorrentInfo.h"
+#include "errors/InvalidBencodeFileFormatError.h"
+#include "errors/MissingTorrentInfo.h"
 #include "fileSystem/FileSystemServiceFactory.h"
 #include "fileSystem/GetProjectPath.h"
 

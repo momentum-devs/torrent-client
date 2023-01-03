@@ -25,9 +25,6 @@ add_executable(coreUT ${SOURCES} ${UT_SOURCES})
 
 target_include_directories(core
         PUBLIC
-        "../common/collection/include"
-        "../common/fileSystem/include"
-        "../common/httpClient/include"
         "include"
         PRIVATE
         ${Boost_INCLUDE_DIR}
@@ -36,18 +33,12 @@ target_include_directories(core
 
 target_include_directories(coreUT PRIVATE
         "include"
-        "../common/collection/include"
-        "../common/fileSystem/include"
-        "../common/httpClient/include"
         ${Boost_INCLUDE_DIR}
         ${BENCODE_INCLUDE_DIR}
         ${GTEST_INCLUDE_DIR}
         )
 
-target_link_libraries(core PRIVATE collection fileSystem httpClient fmt gtest_main gmock_main)
+target_link_libraries(core PRIVATE collection fileSystem httpClient fmt)
 target_link_libraries(coreUT PRIVATE collection fileSystem httpClient fmt gtest_main gmock_main)
-
-target_compile_options(core PUBLIC ${FLAGS})
-target_compile_options(coreUT PUBLIC ${FLAGS})
 
 add_test(coreUT --gtest_color=yes)

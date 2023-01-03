@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "../../../common/httpClient/include/httpClient/HttpClient.h"
 #include "AnnounceResponseDeserializer.h"
+#include "httpClient/HttpClient.h"
 #include "PeersRetriever.h"
 
 class PeersRetrieverImpl : public PeersRetriever
