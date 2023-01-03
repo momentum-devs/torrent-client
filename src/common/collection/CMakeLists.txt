@@ -26,7 +26,4 @@ target_include_directories(collectionUT PRIVATE
 
 target_link_libraries(collectionUT PRIVATE gtest_main)
 
-target_compile_options(collection PUBLIC ${FLAGS})
-target_compile_options(collectionUT PUBLIC ${FLAGS})
-
 add_test(collectionUT collectionUT --gtest_color=yes)

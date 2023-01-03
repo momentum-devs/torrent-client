@@ -30,7 +30,4 @@ target_link_libraries(fileSystem PUBLIC collection fmt::fmt)
 
 target_link_libraries(fileSystemUT PRIVATE gtest_main collection fmt::fmt)
 
-target_compile_options(fileSystem PUBLIC ${FLAGS})
-target_compile_options(fileSystemUT PUBLIC ${FLAGS})
-
 add_test(fileSystemUT fileSystemUT --gtest_color=yes)

@@ -1,6 +1,6 @@
 #include "PeersRetrieverImpl.h"
 
-#include "../HexEncoder.h"
+#include "encoder/HexEncoder.h"
 
 namespace core
 {
@@ -12,15 +12,16 @@ PeersRetrieverImpl::PeersRetrieverImpl(std::unique_ptr<common::httpClient::HttpC
 
 RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPayload& payload)
 {
-    const auto queryParameters = std::map<std::string, std::string>{{"info_hash", HexEncoder::decode(payload.infoHash)},
-                                                                    {"peer_id", payload.peerId},
-                                                                    {"port", payload.port},
-                                                                    {"uploaded", payload.uploaded},
-                                                                    {"downloaded", payload.downloaded},
-                                                                    {"left", payload.left},
-                                                                    {"compact", payload.compact}};
+    const auto queryParameters =
+        std::map<std::string, std::string>{{"info_hash", common::encoder::HexEncoder::decode(payload.infoHash)},
+                                           {"peer_id", payload.peerId},
+                                           {"port", payload.port},
+                                           {"uploaded", payload.uploaded},
+                                           {"downloaded", payload.downloaded},
+                                           {"left", payload.left},
+                                           {"compact", payload.compact}};
 
-    auto response = httpClient->get({payload.announceUrl, std::nullopt, queryParameters});
+    const auto response = httpClient->get({payload.announceUrl, std::nullopt, queryParameters});
 
     auto deserializedResponse = responseDeserializer->deserialize(response.data);
 

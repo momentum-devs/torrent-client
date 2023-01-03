@@ -1,6 +1,6 @@
 #include "HexEncoder.h"
 
-namespace core
+namespace common::encoder
 {
 std::string HexEncoder::encode(const std::string& data)
 {

@@ -3,7 +3,7 @@
 #include <boost/compute/detail/sha1.hpp>
 
 #include "../BencodeHelper.h"
-#include "../HexEncoder.h"
+#include "encoder/HexEncoder.h"
 #include "TorrentFileInfo.h"
 
 namespace
@@ -63,7 +63,7 @@ std::vector<std::string> TorrentFileDeserializerImpl::getPiecesHashes(bencode::d
     for (size_t i = 0; i < piecesFieldValue.size(); i += 20)
     {
         std::string pieceHashBytes{piecesFieldValue.begin() + i, piecesFieldValue.begin() + i + 20};
-        std::string pieceHashHex = HexEncoder::encode(pieceHashBytes);
+        std::string pieceHashHex = common::encoder::HexEncoder::encode(pieceHashBytes);
         piecesHashesVector.push_back(pieceHashHex);
     }
 

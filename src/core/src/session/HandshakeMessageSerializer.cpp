@@ -1,6 +1,6 @@
 #include "HandshakeMessageSerializer.h"
 
-#include "../HexEncoder.h"
+#include "encoder/HexEncoder.h"
 
 namespace core
 {
@@ -11,7 +11,7 @@ std::string HandshakeMessageSerializer::serialize(const HandshakeMessage& messag
     serializedMessage += static_cast<char>(message.protocolIdentifier.size());
     serializedMessage += message.protocolIdentifier;
     serializedMessage += std::string(8, '\0');
-    serializedMessage += HexEncoder::decode(message.infoHash);
+    serializedMessage += common::encoder::HexEncoder::decode(message.infoHash);
     serializedMessage += message.peerId;
 
     return serializedMessage;

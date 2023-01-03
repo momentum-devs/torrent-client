@@ -18,5 +18,3 @@ target_link_libraries(httpClient
         cpr::cpr
         collection
         )
-
-target_compile_options(httpClient PUBLIC ${FLAGS})

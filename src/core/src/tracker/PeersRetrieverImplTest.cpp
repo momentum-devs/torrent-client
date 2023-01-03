@@ -6,7 +6,7 @@
 #include "httpClient/HttpClientMock.h"
 
 #include "../client/PeerIdGenerator.h"
-#include "../HexEncoder.h"
+#include "encoder/HexEncoder.h"
 
 using namespace ::testing;
 using namespace core;
@@ -21,13 +21,14 @@ const auto uploaded = "0";
 const auto downloaded = "0";
 const auto left = "399507456";
 const auto compact = "1";
-const auto queryParameters = std::map<std::string, std::string>{{"info_hash", HexEncoder::decode(infoHash)},
-                                                                {"peer_id", peerId},
-                                                                {"port", port},
-                                                                {"uploaded", uploaded},
-                                                                {"downloaded", downloaded},
-                                                                {"left", left},
-                                                                {"compact", compact}};
+const auto queryParameters =
+    std::map<std::string, std::string>{{"info_hash", common::encoder::HexEncoder::decode(infoHash)},
+                                       {"peer_id", peerId},
+                                       {"port", port},
+                                       {"uploaded", uploaded},
+                                       {"downloaded", downloaded},
+                                       {"left", left},
+                                       {"compact", compact}};
 const auto httpGetPayload = common::httpClient::HttpGetRequestPayload{announceUrl, std::nullopt, queryParameters};
 const auto responseBody = "body";
 const auto httpGetResponse = common::httpClient::HttpResponse{200, responseBody};

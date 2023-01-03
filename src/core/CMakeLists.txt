@@ -1,7 +1,6 @@
 set(SOURCES
         src/torrentFile/TorrentFileDeserializerImpl.cpp
         src/tracker/PeersRetrieverImpl.cpp
-        src/HexEncoder.cpp
         src/client/PeerIdGenerator.cpp
         src/tracker/AnnounceResponseDeserializerImpl.cpp
         src/session/HandshakeMessageSerializer.cpp
@@ -38,7 +37,7 @@ target_include_directories(coreUT PRIVATE
         ${GTEST_INCLUDE_DIR}
         )
 
-target_link_libraries(core PRIVATE collection fileSystem httpClient fmt)
-target_link_libraries(coreUT PRIVATE collection fileSystem httpClient fmt gtest_main gmock_main)
+target_link_libraries(core PRIVATE collection fileSystem httpClient encoder fmt)
+target_link_libraries(coreUT PRIVATE collection fileSystem httpClient encoder fmt gtest_main gmock_main)
 
 add_test(coreUT --gtest_color=yes)

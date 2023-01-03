@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace core
+namespace common::encoder
 {
 class HexEncoder
 {
