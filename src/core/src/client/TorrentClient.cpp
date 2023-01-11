@@ -46,7 +46,7 @@ void TorrentClient::download(const std::string& torrentFilePath)
 
     std::cout << "Get list of " << response.peersEndpoints.size() << " peers" << std::endl;
 
-    auto firstPeerEndpoint = response.peersEndpoints[7];
+    auto firstPeerEndpoint = response.peersEndpoints[11];
 
     boost::asio::io_context context;
 

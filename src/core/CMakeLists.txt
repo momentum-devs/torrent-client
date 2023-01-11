@@ -40,4 +40,4 @@ target_include_directories(coreUT PRIVATE
 target_link_libraries(core PRIVATE collection fileSystem httpClient encoder fmt)
 target_link_libraries(coreUT PRIVATE collection fileSystem httpClient encoder fmt gtest_main gmock_main)
 
-add_test(coreUT --gtest_color=yes)
+add_test(coreUT coreUT --gtest_color=yes)
