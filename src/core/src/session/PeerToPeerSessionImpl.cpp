@@ -77,8 +77,6 @@ void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error, std
     std::cout << "Read handshake from " << socket.remote_endpoint() << ": " << error.message()
               << ", bytes transferred: " << bytes_transferred << " handshake message: " << data << std::endl;
 
-    const auto numberOfBytesInBitfield = static_cast<int>(ceilf(static_cast<float>(numberOfPieces) / 8.f)) + 5;
-
     readMessage();
 }
 
@@ -119,7 +117,7 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
         return;
     }
 
-    std::string data{std::istreambuf_iterator<char>(&response), std::istreambuf_iterator<char>()};
+    std::basic_string<unsigned char> data{std::istreambuf_iterator<char>(&response), std::istreambuf_iterator<char>()};
 
     auto message = MessageSerializer().deserialize(data);
 
@@ -137,7 +135,7 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
 
         std::cout << std::endl;
 
-        const auto unchokeMessage = Message{MessageId::Unchoke, ""};
+        const auto unchokeMessage = Message{MessageId::Unchoke, std::basic_string<unsigned char>{}};
 
         auto serializedUnchokeMessage = MessageSerializer().serialize(unchokeMessage);
 
