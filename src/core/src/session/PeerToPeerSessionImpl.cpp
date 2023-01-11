@@ -208,6 +208,11 @@ std::pair<iterator, bool> messageMatch(iterator begin, iterator end)
     int messageLength = (static_cast<unsigned char>(*begin) << 24) + (static_cast<unsigned char>(*(begin + 1)) << 16) +
                         (static_cast<unsigned char>(*(begin + 2)) << 8) + static_cast<unsigned char>(*(begin + 3));
 
+    if (messageLength == 0)
+    {
+        return {begin + 4, false};
+    }
+
     if (dataSize < messageLength + 4)
     {
         return {begin, false};
