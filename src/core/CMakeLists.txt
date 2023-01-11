@@ -35,7 +35,7 @@ target_include_directories(coreUT PRIVATE
         ${GTEST_INCLUDE_DIR}
         )
 
-target_link_libraries(core PRIVATE collection fileSystem httpClient encoder fmt)
-target_link_libraries(coreUT PRIVATE collection fileSystem httpClient encoder fmt gtest_main gmock_main)
+target_link_libraries(core PRIVATE collection fileSystem httpClient encoder bytes fmt)
+target_link_libraries(coreUT PRIVATE collection fileSystem httpClient encoder bytes fmt gtest_main gmock_main)
 
 add_test(coreUT coreUT --gtest_color=yes)

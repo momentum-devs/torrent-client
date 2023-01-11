@@ -7,7 +7,7 @@ namespace core
 class MessageSerializer
 {
 public:
-    std::string serialize(const Message& message) const;
-    Message deserialize(const std::string& message) const;
+    std::basic_string<unsigned char> serialize(const Message& message) const;
+    Message deserialize(const std::basic_string<unsigned char>& message) const;
 };
 }

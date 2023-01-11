@@ -10,7 +10,7 @@ namespace core
 struct Message
 {
     MessageId id;
-    std::string payload;
+    std::basic_string<unsigned char> payload;
 };
 
 inline bool operator==(const Message& lhs, const Message& rhs)
@@ -20,6 +20,6 @@ inline bool operator==(const Message& lhs, const Message& rhs)
 
 inline std::ostream& operator<<(std::ostream& os, const Message& message)
 {
-    return os << "id: " << message.id << " payload: " << message.payload;
+    return os << "id: " << message.id << " payload: " << message.payload.data();
 }
 }

@@ -96,7 +96,7 @@ void PeerToPeerSessionImpl::onReadBitfieldMessage(boost::system::error_code erro
     std::cout << "Read bitfield message from " << socket.remote_endpoint() << ": " << error.message()
               << ", bytes transferred: " << bytes_transferred << " bitfield message: " << data << std::endl;
 
-    const auto unchokeMessage = Message{MessageId::Unchoke, ""};
+    const auto unchokeMessage = Message{MessageId::Unchoke, std::basic_string<unsigned char>{}};
 
     auto serializedUnchokeMessage = MessageSerializer().serialize(unchokeMessage);
 
@@ -110,7 +110,7 @@ void PeerToPeerSessionImpl::onWriteUnchokeMessage(boost::system::error_code erro
     std::cout << "Write unchoke message to " << socket.remote_endpoint() << ": " << error.message()
               << ", bytes transferred: " << bytes_transferred << std::endl;
 
-    const auto interestedMessage = Message{MessageId::Interested, ""};
+    const auto interestedMessage = Message{MessageId::Interested, std::basic_string<unsigned char>{}};
 
     auto serializedInterestedMessage = MessageSerializer().serialize(interestedMessage);
 

@@ -7,10 +7,11 @@ using namespace core;
 
 namespace
 {
-const auto payload = std::string{"payload"};
-const auto serializedUnchokeMessage = std::string{0, 0, 0, 1, MessageId::Unchoke};
+const auto payload = std::basic_string<unsigned char>(reinterpret_cast<const unsigned char*>("payload"));
+const auto serializedUnchokeMessage = std::basic_string<unsigned char>{0, 0, 0, 1, MessageId::Unchoke};
 const auto serializedBitfieldMessage =
-    std::string{0, 0, 0, static_cast<char>(1 + payload.size()), MessageId::Bitfield} + payload;
+    std::basic_string<unsigned char>{0, 0, 0, static_cast<unsigned char>(1 + payload.size()), MessageId::Bitfield} +
+    payload;
 }
 
 class MessageSerializerTest : public Test
@@ -21,7 +22,7 @@ public:
 
 TEST_F(MessageSerializerTest, serializeUnchokeMessageWithoutPayload)
 {
-    const auto message = core::Message{MessageId::Unchoke, ""};
+    const auto message = core::Message{MessageId::Unchoke, std::basic_string<unsigned char>{}};
 
     const auto serializedMessage = serializer.serialize(message);
 
@@ -77,7 +78,7 @@ TEST_F(MessageSerializerTest, deserializeUnchokeMessage)
     const auto message = serializer.deserialize(serializedUnchokeMessage);
 
     ASSERT_EQ(message.id, MessageId::Unchoke);
-    ASSERT_EQ(message.payload, "");
+    ASSERT_TRUE(message.payload.empty());
 }
 
 TEST_F(MessageSerializerTest, deserializeBitfieldMessage)
