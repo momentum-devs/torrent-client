@@ -1,6 +1,7 @@
 #include <boost/asio.hpp>
 
 #include "../tracker/PeerEndpoint.h"
+#include "collection/ThreadSafeQueue.h"
 #include "HandshakeMessage.h"
 #include "PeerToPeerSession.h"
 
@@ -9,9 +10,9 @@ namespace core
 class PeerToPeerSessionImpl : public PeerToPeerSession
 {
 public:
-    PeerToPeerSessionImpl(boost::asio::io_context& ioContext, unsigned numberOfPieces, PeerEndpoint peerEndpoint,
-                          std::string peerId);
-    
+    PeerToPeerSessionImpl(boost::asio::io_context& ioContext, common::collection::ThreadSafeQueue<int>&,
+                          PeerEndpoint peerEndpoint, std::string peerId);
+
     void startSession(const std::string& infoHash) override;
 
 private:
@@ -26,7 +27,7 @@ private:
     boost::asio::ip::tcp::socket socket;
     std::string request;
     boost::asio::streambuf response;
-    const unsigned numberOfPieces;
+    common::collection::ThreadSafeQueue<int>& piecesQueue;
     PeerEndpoint peerEndpoint;
     const std::string peerId;
 };

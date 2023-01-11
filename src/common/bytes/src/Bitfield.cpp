@@ -21,6 +21,11 @@ std::string Bitfield::toString() const
     return dataAsString;
 }
 
+std::size_t Bitfield::size() const
+{
+    return data.size();
+}
+
 std::vector<bool> Bitfield::initializeData(const std::basic_string<unsigned char>& dataInit) const
 {
     std::vector<bool> bits;

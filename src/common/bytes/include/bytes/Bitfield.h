@@ -12,6 +12,7 @@ public:
 
     bool hasBitSet(int bitIndex) const;
     std::string toString() const;
+    std::size_t size() const;
 
 private:
     std::vector<bool> initializeData(const std::basic_string<unsigned char>& data) const;

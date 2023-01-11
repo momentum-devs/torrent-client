@@ -1,9 +1,12 @@
 #include "TorrentClient.h"
 
+#include <numeric>
+
 #include "fmt/format.h"
 
 #include "../session/HandshakeMessage.h"
 #include "../session/PeerToPeerSessionImpl.h"
+#include "collection/ThreadSafeQueue.h"
 #include "PeerIdGenerator.h"
 
 namespace core
@@ -23,37 +26,43 @@ TorrentClient::TorrentClient(std::unique_ptr<common::fileSystem::FileSystemServi
 
 void TorrentClient::download(const std::string& torrentFilePath)
 {
-    auto torrentFileContent = fileSystemService->read(torrentFilePath);
+    const auto torrentFileContent = fileSystemService->read(torrentFilePath);
 
-    auto torrentFileInfo = torrentFileDeserializer->deserialize(torrentFileContent);
+    const auto torrentFileInfo = torrentFileDeserializer->deserialize(torrentFileContent);
 
     const auto numberOfPieces = static_cast<unsigned>(torrentFileInfo.piecesHashes.size());
 
     std::cout << fmt::format("File has {} pieces.", numberOfPieces) << std::endl;
 
-    auto peerId = PeerIdGenerator::generate();
+    std::vector<int> iotaData(numberOfPieces);
 
-    auto retrievePeersPayload = RetrievePeersPayload{torrentFileInfo.announce,
-                                                     torrentFileInfo.infoHash,
-                                                     peerId,
-                                                     "0",
-                                                     "0",
-                                                     "0",
-                                                     std::to_string(torrentFileInfo.length),
-                                                     "1"};
+    std::iota(iotaData.begin(), iotaData.end(), 0);
 
-    auto response = peerRetriever->retrievePeers(retrievePeersPayload);
+    auto piecesQueue = common::collection::ThreadSafeQueue{iotaData};
 
-    std::cout << "Get list of " << response.peersEndpoints.size() << " peers" << std::endl;
+    const auto peerId = PeerIdGenerator::generate();
 
-    auto firstPeerEndpoint = response.peersEndpoints[7];
+    const auto retrievePeersPayload = RetrievePeersPayload{torrentFileInfo.announce,
+                                                           torrentFileInfo.infoHash,
+                                                           peerId,
+                                                           "0",
+                                                           "0",
+                                                           "0",
+                                                           std::to_string(torrentFileInfo.length),
+                                                           "1"};
+
+    const auto response = peerRetriever->retrievePeers(retrievePeersPayload);
+
+    std::cout << fmt::format("Got list of {} peers.", response.peersEndpoints.size()) << std::endl;
+
+    const auto firstPeerEndpoint = response.peersEndpoints[29];
 
     boost::asio::io_context context;
 
-    std::unique_ptr<PeerToPeerSession> peerConnector =
-        std::make_unique<PeerToPeerSessionImpl>(context, numberOfPieces, firstPeerEndpoint, peerId);
+    std::unique_ptr<PeerToPeerSession> peerToPeerSession =
+        std::make_unique<PeerToPeerSessionImpl>(context, piecesQueue, firstPeerEndpoint, peerId);
 
-    peerConnector->startSession(torrentFileInfo.infoHash);
+    peerToPeerSession->startSession(torrentFileInfo.infoHash);
 
     context.run();
 }

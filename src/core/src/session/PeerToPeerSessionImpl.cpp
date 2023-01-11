@@ -17,10 +17,11 @@ std::pair<iterator, bool> messageMatch(iterator begin, iterator end);
 
 namespace core
 {
-PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext, unsigned numberOfPiecesInit,
+PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
+                                             common::collection::ThreadSafeQueue<int>& piecesQueueInit,
                                              PeerEndpoint peerEndpointInit, std::string peerIdInit)
     : socket(ioContext),
-      numberOfPieces{numberOfPiecesInit},
+      piecesQueue{piecesQueueInit},
       peerEndpoint{std::move(peerEndpointInit)},
       peerId{std::move(peerIdInit)}
 {
