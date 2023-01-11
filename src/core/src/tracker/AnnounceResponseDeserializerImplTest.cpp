@@ -14,7 +14,7 @@ namespace
 std::unique_ptr<common::fileSystem::FileSystemService> fileSystemService =
     FileSystemServiceFactory().createFileSystemService();
 const auto projectPath = getProjectPath("torrent-client");
-const auto testFileDirectoryPath = projectPath + "src/testFiles/";
+const auto testFileDirectoryPath = projectPath + "src/core/src/torrentFile/testFiles/";
 const auto validAnnounceResponseFilePath = testFileDirectoryPath + "validAnnounceResponse.txt";
 const auto validAnnounceResponseFileContent = fileSystemService->read(validAnnounceResponseFilePath);
 PeerEndpoint peerEndpoint{"169.1.40.40", 51414};

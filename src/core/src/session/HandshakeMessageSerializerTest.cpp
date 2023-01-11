@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 
 #include "../client/PeerIdGenerator.h"
-#include "../HexEncoder.h"
+#include "encoder/HexEncoder.h"
 
 using namespace ::testing;
 using namespace core;
@@ -13,7 +13,7 @@ namespace
 const std::string protocolIdentifier = "BitTorrent protocol";
 const auto peerId = PeerIdGenerator::generate();
 const std::string infoHash = "b3f4b20f822c471cfd97745abb98e69b4fe0986e";
-const auto decodedInfoHash = HexEncoder::decode(infoHash);
+const auto decodedInfoHash = common::encoder::HexEncoder::decode(infoHash);
 }
 
 class HandshakeMessageSerializerTest : public Test

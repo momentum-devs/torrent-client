@@ -8,7 +8,7 @@ using namespace common::fileSystem;
 
 namespace
 {
-const std::string testExecutableName{"torrent-clientUT"};
+const std::string testExecutableName{"fileSystemUT"};
 }
 
 TEST(GetExecutablePathTest, shouldReturnAbsolutePathToProject)
