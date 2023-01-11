@@ -1,9 +1,11 @@
 set(SOURCES
         src/BytesConverter.cpp
+        src/Bitfield.cpp
         )
 
 set(UT_SOURCES
         src/BytesConverterTest.cpp
+        src/BitfieldTest.cpp
         )
 
 add_library(bytes ${SOURCES})

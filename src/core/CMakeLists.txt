@@ -7,7 +7,6 @@ set(SOURCES
         src/session/PeerToPeerSessionImpl.cpp
         src/session/MessageSerializer.cpp
         src/client/TorrentClient.cpp
-        src/session/Bitfield.cpp
         )
 
 set(UT_SOURCES
@@ -16,7 +15,6 @@ set(UT_SOURCES
         src/tracker/AnnounceResponseDeserializerImplTest.cpp
         src/session/HandshakeMessageSerializerTest.cpp
         src/session/MessageSerializerTest.cpp
-        src/session/BitfieldTest.cpp
         )
 
 add_library(core ${SOURCES})
