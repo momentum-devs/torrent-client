@@ -11,13 +11,13 @@ class PeerToPeerSessionImpl : public PeerToPeerSession
 public:
     PeerToPeerSessionImpl(boost::asio::io_context& ioContext, unsigned numberOfPieces, PeerEndpoint peerEndpoint,
                           std::string peerId);
+    
     void startSession(const std::string& infoHash) override;
 
 private:
     void sendHandshake(const HandshakeMessage& handshakeMessage);
     void onWriteHandshake(boost::system::error_code error, std::size_t bytes_transferred);
     void onReadHandshake(boost::system::error_code error, std::size_t bytes_transferred);
-    void onReadBitfieldMessage(boost::system::error_code error, std::size_t bytes_transferred);
     void onWriteUnchokeMessage(boost::system::error_code error, std::size_t bytes_transferred);
     void onWriteInterestedMessage(boost::system::error_code error, std::size_t bytes_transferred);
     void readMessage();

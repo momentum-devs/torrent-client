@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "bytes/Bitfield.h"
+#include "bytes/BytesConverter.h"
 #include "errors/PeerConnectionError.h"
 #include "HandshakeMessageSerializer.h"
 #include "MessageSerializer.h"
@@ -41,14 +43,14 @@ void PeerToPeerSessionImpl::startSession(const std::string& infoHash)
 
     std::cout << "Connected to: " << endpoint << std::endl;
 
-    auto handshakeMessage = HandshakeMessage{"BitTorrent protocol", infoHash, peerId};
+    const auto handshakeMessage = HandshakeMessage{"BitTorrent protocol", infoHash, peerId};
 
     sendHandshake(handshakeMessage);
 }
 
 void PeerToPeerSessionImpl::sendHandshake(const HandshakeMessage& handshakeMessage)
 {
-    auto serializedHandshakeMessage = HandshakeMessageSerializer().serialize(handshakeMessage);
+    const auto serializedHandshakeMessage = HandshakeMessageSerializer().serialize(handshakeMessage);
 
     std::cout << "Sending handshake message: " << serializedHandshakeMessage << " to: " << socket.remote_endpoint()
               << std::endl;
@@ -87,7 +89,7 @@ void PeerToPeerSessionImpl::onWriteUnchokeMessage(boost::system::error_code erro
 
     const auto interestedMessage = Message{MessageId::Interested, std::basic_string<unsigned char>{}};
 
-    auto serializedInterestedMessage = MessageSerializer().serialize(interestedMessage);
+    const auto serializedInterestedMessage = MessageSerializer().serialize(interestedMessage);
 
     boost::asio::async_write(socket, boost::asio::buffer(serializedInterestedMessage),
                              [this](boost::system::error_code errorCode, std::size_t bytes)
@@ -113,13 +115,16 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
     if (bytes_transferred == 0)
     {
         std::cout << "onReadMessage: Receive KeepAlive message" << std::endl;
+
         readMessage();
+
         return;
     }
 
-    std::basic_string<unsigned char> data{std::istreambuf_iterator<char>(&response), std::istreambuf_iterator<char>()};
+    const std::basic_string<unsigned char> data{std::istreambuf_iterator<char>(&response),
+                                                std::istreambuf_iterator<char>()};
 
-    auto message = MessageSerializer().deserialize(data);
+    const auto message = MessageSerializer().deserialize(data);
 
     std::cout << "onReadMessage: Read " << toString(message.id) << " message to " << socket.remote_endpoint() << ": "
               << error.message() << ", bytes transferred: " << bytes_transferred << std::endl;
@@ -128,16 +133,15 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
     {
     case MessageId::Bitfield:
     {
-        for (size_t i = 5; i < data.size(); i++)
-        {
-            std::cout << static_cast<int>(static_cast<unsigned char>(data[i])) << " ";
-        }
+        const auto bitfieldData = data.substr(5);
 
-        std::cout << std::endl;
+        const auto bitfield = common::bytes::Bitfield{bitfieldData};
+
+        std::cout << "Bitfield: " << bitfield.toString() << std::endl;
 
         const auto unchokeMessage = Message{MessageId::Unchoke, std::basic_string<unsigned char>{}};
 
-        auto serializedUnchokeMessage = MessageSerializer().serialize(unchokeMessage);
+        const auto serializedUnchokeMessage = MessageSerializer().serialize(unchokeMessage);
 
         boost::asio::async_write(socket, boost::asio::buffer(serializedUnchokeMessage),
                                  [this](boost::system::error_code errorCode, std::size_t bytes)
@@ -196,15 +200,18 @@ namespace
 {
 std::pair<iterator, bool> messageMatch(iterator begin, iterator end)
 {
-    auto dataSize = end - begin;
+    const auto dataSize = end - begin;
 
     if (dataSize < 5)
     {
         return {begin, false};
     }
 
-    int messageLength = (static_cast<unsigned char>(*begin) << 24) + (static_cast<unsigned char>(*(begin + 1)) << 16) +
-                        (static_cast<unsigned char>(*(begin + 2)) << 8) + static_cast<unsigned char>(*(begin + 3));
+    const std::basic_string<unsigned char> messageLengthInBytes{
+        static_cast<unsigned char>(*begin), static_cast<unsigned char>(*(begin + 1)),
+        static_cast<unsigned char>(*(begin + 2)), static_cast<unsigned char>(*(begin + 3))};
+
+    const auto messageLength = common::bytes::BytesConverter::bytesToInt(messageLengthInBytes);
 
     if (messageLength == 0)
     {

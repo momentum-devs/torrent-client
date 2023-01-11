@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 
 using namespace ::testing;
-using namespace core;
+using namespace common::bytes;
 
 namespace
 {
