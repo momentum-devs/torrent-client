@@ -22,6 +22,8 @@ target_include_directories(bytesUT PRIVATE
         ${GTEST_INCLUDE_DIR}
         )
 
-target_link_libraries(bytesUT PRIVATE gtest_main)
+target_link_libraries(bytes PRIVATE fmt)
+
+target_link_libraries(bytesUT PRIVATE gtest_main fmt)
 
 add_test(bytesUT bytesUT --gtest_color=yes)

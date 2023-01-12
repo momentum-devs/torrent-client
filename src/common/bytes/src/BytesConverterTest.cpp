@@ -15,13 +15,22 @@ TEST(BytesConverterTest, convertsIntegerIntoBytes)
     ASSERT_EQ(result[3], '\x13');
 }
 
-TEST(BytesConverterTest, convertsBytesIntoInteger)
+TEST(BytesConverterTest, convertsBytesIntoInteger1)
 {
-    const auto bytes = std::basic_string<unsigned char>(3, '\0') + static_cast<unsigned char>(0x7f);
+    const auto bytes = std::basic_string<unsigned char>{0, 0, 0, 127};
 
     const auto result = BytesConverter::bytesToInt(bytes);
 
     ASSERT_EQ(result, 127);
+}
+
+TEST(BytesConverterTest, convertsBytesIntoInteger2)
+{
+    const auto bytes = std::basic_string<unsigned char>{1, 0, 0, 64};
+
+    const auto result = BytesConverter::bytesToInt(bytes);
+
+    ASSERT_EQ(result, 16777280);
 }
 
 TEST(BytesConverterTest, givenBytesWithInvalidNumberOfBytes_shouldThrow)

@@ -34,7 +34,7 @@ void TorrentClient::download(const std::string& torrentFilePath)
 
     const auto numberOfPieces = static_cast<unsigned>(torrentFileInfo.piecesHashes.size());
 
-    std::cout << fmt::format("File has {} pieces.", numberOfPieces) << std::endl;
+    std::cout << fmt::format("File has {} pieces, each piece has {} bytes.", numberOfPieces, torrentFileInfo.pieceLength) << std::endl;
 
     std::vector<int> iotaData(numberOfPieces);
 

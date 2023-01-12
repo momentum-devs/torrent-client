@@ -13,8 +13,6 @@
 namespace
 {
 using iterator = boost::asio::buffers_iterator<boost::asio::streambuf::const_buffers_type>;
-
-std::pair<iterator, bool> messageMatch(iterator begin, iterator end);
 }
 
 namespace core
@@ -60,8 +58,7 @@ void PeerToPeerSessionImpl::sendHandshake(const HandshakeMessage& handshakeMessa
 {
     const auto serializedHandshakeMessage = HandshakeMessageSerializer().serialize(handshakeMessage);
 
-    std::cout << "Sending handshake message: " << serializedHandshakeMessage << " to: " << socket.remote_endpoint()
-              << std::endl;
+    std::cout << "Sending handshake message to: " << socket.remote_endpoint() << std::endl;
 
     boost::asio::async_write(socket, boost::asio::buffer(serializedHandshakeMessage),
                              [this](boost::system::error_code errorCode, std::size_t bytes)
@@ -70,8 +67,13 @@ void PeerToPeerSessionImpl::sendHandshake(const HandshakeMessage& handshakeMessa
 
 void PeerToPeerSessionImpl::onWriteHandshake(boost::system::error_code error, std::size_t bytes_transferred)
 {
-    std::cout << "Write handshake to " << socket.remote_endpoint() << ": " << error.message()
-              << ", bytes transferred: " << bytes_transferred << std::endl;
+    if (error)
+    {
+        std::cerr << error.message() << std::endl;
+    }
+
+    std::cout << "Wrote handshake to " << socket.remote_endpoint() << ", bytes transferred: " << bytes_transferred
+              << std::endl;
 
     const auto numberOfBytesInHandshake = 68;
 
@@ -82,18 +84,26 @@ void PeerToPeerSessionImpl::onWriteHandshake(boost::system::error_code error, st
 
 void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error, std::size_t bytes_transferred)
 {
-    std::string data{std::istreambuf_iterator<char>(&response), std::istreambuf_iterator<char>()};
+    if (error)
+    {
+        std::cerr << error.message() << std::endl;
+    }
 
-    std::cout << "Read handshake from " << socket.remote_endpoint() << ": " << error.message()
-              << ", bytes transferred: " << bytes_transferred << " handshake message: " << data << std::endl;
+    std::cout << "Read handshake from " << socket.remote_endpoint() << ", bytes transferred: " << bytes_transferred
+              << std::endl;
 
     readMessage();
 }
 
 void PeerToPeerSessionImpl::onWriteUnchokeMessage(boost::system::error_code error, std::size_t bytes_transferred)
 {
-    std::cout << "Write unchoke message to " << socket.remote_endpoint() << ": " << error.message()
-              << ", bytes transferred: " << bytes_transferred << std::endl;
+    if (error)
+    {
+        std::cerr << error.message() << std::endl;
+    }
+
+    std::cout << "Write unchoke message to " << socket.remote_endpoint() << ", bytes transferred: " << bytes_transferred
+              << std::endl;
 
     const auto interestedMessage = Message{MessageId::Interested, std::basic_string<unsigned char>{}};
 
@@ -106,8 +116,14 @@ void PeerToPeerSessionImpl::onWriteUnchokeMessage(boost::system::error_code erro
 
 void PeerToPeerSessionImpl::onWriteInterestedMessage(boost::system::error_code error, std::size_t bytes_transferred)
 {
+    if (error)
+    {
+        std::cerr << error.message() << std::endl;
+    }
+
     std::cout << "Write interested message to " << socket.remote_endpoint() << ": " << error.message()
               << ", bytes transferred: " << bytes_transferred << std::endl;
+
     readMessage();
 }
 
@@ -120,17 +136,32 @@ void PeerToPeerSessionImpl::readMessage()
 
 void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error, std::size_t bytes_transferred)
 {
-    const std::basic_string<unsigned char> data{std::istreambuf_iterator<char>(&response),
-                                                std::istreambuf_iterator<char>()};
+    std::cout << fmt::format("Reading message length which has {} bytes, bytes transferred: {}", response.size(),
+                             bytes_transferred)
+              << std::endl;
 
-    int bytesToRead = common::bytes::BytesConverter::bytesToInt(data);
+    if (error)
+    {
+        std::cerr << error.message() << std::endl;
+    }
+
+    const std::string data{std::istreambuf_iterator<char>(&response), std::istreambuf_iterator<char>()};
+
+    std::basic_string<unsigned char> bytes;
+
+    for (const auto& dataEntry : data)
+    {
+        bytes += static_cast<unsigned char>(dataEntry);
+    }
+
+    const auto bytesToRead = common::bytes::BytesConverter::bytesToInt(bytes);
+
+    std::cout << fmt::format("{} bytes should be read from payload data.", bytesToRead) << std::endl;
 
     if (bytesToRead == 0)
     {
         readMessage();
     }
-
-    std::cout << bytesToRead << std::endl;
 
     boost::asio::async_read(socket, response, boost::asio::transfer_exactly(bytesToRead),
                             [this](boost::system::error_code errorCode, std::size_t bytes)
@@ -139,20 +170,24 @@ void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error,
 
 void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::size_t bytes_transferred)
 {
+    std::cout << fmt::format("Reading message which has {} bytes, bytes transferred: {}", response.size(),
+                             bytes_transferred)
+              << std::endl;
+
+    if (error)
+    {
+        std::cerr << error.message() << std::endl;
+    }
+
     if (bytes_transferred == 0 or bytes_transferred == 4)
     {
         readMessage();
-
-        return;
     }
 
     const std::basic_string<unsigned char> data{std::istreambuf_iterator<char>(&response),
                                                 std::istreambuf_iterator<char>()};
 
     const auto message = MessageSerializer().deserialize(data);
-
-    std::cout << "onReadMessage: Read " << toString(message.id) << " message from " << socket.remote_endpoint() << ": "
-              << error.message() << ", bytes transferred: " << bytes_transferred << std::endl;
 
     switch (message.id)
     {
@@ -200,6 +235,7 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
     case MessageId::Piece:
     {
         pieceBytesRead += maxBlockSize;
+
         std::cout << pieceBytesRead << '/' << pieceSize << std::endl;
 
         if (pieceBytesRead >= pieceSize)
@@ -223,7 +259,7 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
         boost::asio::async_write(socket, boost::asio::buffer(serializedRequestMessage),
                                  [this](boost::system::error_code errorCode, std::size_t bytes)
                                  {
-                                     std::cout << "Write request message to " << socket.remote_endpoint() << ": "
+                                     std::cout << "Wrote request message to " << socket.remote_endpoint() << ": "
                                                << errorCode.message() << ", bytes transferred: " << bytes << std::endl;
                                  });
         break;
@@ -258,41 +294,5 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
     }
 
     readMessage();
-}
-
-namespace
-{
-std::pair<iterator, bool> messageMatch(iterator begin, iterator end)
-{
-    const auto dataSize = end - begin;
-
-    if (dataSize < 4)
-    {
-        std::cout << "1. too less data in buffer" << std::endl;
-        return {begin, false};
-    }
-
-    const std::basic_string<unsigned char> messageLengthInBytes{
-        static_cast<unsigned char>(*begin), static_cast<unsigned char>(*(begin + 1)),
-        static_cast<unsigned char>(*(begin + 2)), static_cast<unsigned char>(*(begin + 3))};
-
-    const auto messageLength = common::bytes::BytesConverter::bytesToInt(messageLengthInBytes);
-
-    if (messageLength == 0)
-    {
-        std::cout << "2. " << std::endl;
-        return {begin + 4, false};
-    }
-
-    if (dataSize < messageLength + 4)
-    {
-        std::cout << fmt::format("3. bytes in buffer: {}, message length: {}", dataSize, messageLength + 4)
-                  << std::endl;
-        return {begin, false};
-    }
-
-    std::cout << "4." << std::endl;
-    return {begin + messageLength + 4, true};
-}
 }
 }
