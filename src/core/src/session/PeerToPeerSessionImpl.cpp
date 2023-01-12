@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "fmt/format.h"
+
 #include "bytes/Bitfield.h"
 #include "bytes/BytesConverter.h"
 #include "errors/PeerConnectionError.h"
@@ -19,11 +21,16 @@ namespace core
 {
 PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
                                              common::collection::ThreadSafeQueue<int>& piecesQueueInit,
-                                             PeerEndpoint peerEndpointInit, std::string peerIdInit)
+                                             PeerEndpoint peerEndpointInit, std::string peerIdInit, int pieceSizeInit)
     : socket(ioContext),
       piecesQueue{piecesQueueInit},
       peerEndpoint{std::move(peerEndpointInit)},
-      peerId{std::move(peerIdInit)}
+      peerId{std::move(peerIdInit)},
+      isChoked{true},
+      pieceIndex{0},
+      pieceSize{pieceSizeInit},
+      pieceBytesRead{0},
+      maxBlockSize{16384} // TODO: Make bigger number work property
 {
 }
 
@@ -106,17 +113,34 @@ void PeerToPeerSessionImpl::onWriteInterestedMessage(boost::system::error_code e
 
 void PeerToPeerSessionImpl::readMessage()
 {
-    boost::asio::async_read_until(socket, response, messageMatch,
-                                  [this](boost::system::error_code errorCode, std::size_t bytes)
-                                  { onReadMessage(errorCode, bytes); });
+    boost::asio::async_read(socket, response, boost::asio::transfer_exactly(4),
+                            [this](boost::system::error_code errorCode, std::size_t bytes)
+                            { onReadMessageLength(errorCode, bytes); });
+}
+
+void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error, std::size_t bytes_transferred)
+{
+    const std::basic_string<unsigned char> data{std::istreambuf_iterator<char>(&response),
+                                                std::istreambuf_iterator<char>()};
+
+    int bytesToRead = common::bytes::BytesConverter::bytesToInt(data);
+
+    if (bytesToRead == 0)
+    {
+        readMessage();
+    }
+
+    std::cout << bytesToRead << std::endl;
+
+    boost::asio::async_read(socket, response, boost::asio::transfer_exactly(bytesToRead),
+                            [this](boost::system::error_code errorCode, std::size_t bytes)
+                            { onReadMessage(errorCode, bytes); });
 }
 
 void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::size_t bytes_transferred)
 {
-    if (bytes_transferred == 0)
+    if (bytes_transferred == 0 or bytes_transferred == 4)
     {
-        std::cout << "onReadMessage: Receive KeepAlive message" << std::endl;
-
         readMessage();
 
         return;
@@ -127,7 +151,7 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
 
     const auto message = MessageSerializer().deserialize(data);
 
-    std::cout << "onReadMessage: Read " << toString(message.id) << " message to " << socket.remote_endpoint() << ": "
+    std::cout << "onReadMessage: Read " << toString(message.id) << " message from " << socket.remote_endpoint() << ": "
               << error.message() << ", bytes transferred: " << bytes_transferred << std::endl;
 
     switch (message.id)
@@ -151,17 +175,57 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
     }
     case MessageId::Unchoke:
     {
-        // TODO: Implement
+        isChoked = false;
+
+        const auto requestMessage =
+            Message{MessageId::Request, common::bytes::BytesConverter::intToBytes(pieceIndex) +
+                                            common::bytes::BytesConverter::intToBytes(pieceBytesRead) +
+                                            common::bytes::BytesConverter::intToBytes(maxBlockSize)};
+
+        auto serializedRequestMessage = MessageSerializer().serialize(requestMessage);
+
+        boost::asio::async_write(socket, boost::asio::buffer(serializedRequestMessage),
+                                 [this](boost::system::error_code errorCode, std::size_t bytes)
+                                 {
+                                     std::cout << "Write request message to " << socket.remote_endpoint() << ": "
+                                               << errorCode.message() << ", bytes transferred: " << bytes << std::endl;
+                                 });
         break;
     }
     case MessageId::Choke:
     {
-        // TODO: Implement
+        isChoked = true;
         break;
     }
     case MessageId::Piece:
     {
-        // TODO: Implement
+        pieceBytesRead += maxBlockSize;
+        std::cout << pieceBytesRead << '/' << pieceSize << std::endl;
+
+        if (pieceBytesRead >= pieceSize)
+        {
+            std::cout << "piece " << pieceIndex << " downloaded" << std::endl;
+            break;
+        }
+
+        if (pieceSize - pieceBytesRead < maxBlockSize)
+        {
+            maxBlockSize = pieceSize - pieceBytesRead;
+        }
+
+        const auto requestMessage =
+            Message{MessageId::Request, common::bytes::BytesConverter::intToBytes(pieceIndex) +
+                                            common::bytes::BytesConverter::intToBytes(pieceBytesRead) +
+                                            common::bytes::BytesConverter::intToBytes(maxBlockSize)};
+
+        auto serializedRequestMessage = MessageSerializer().serialize(requestMessage);
+
+        boost::asio::async_write(socket, boost::asio::buffer(serializedRequestMessage),
+                                 [this](boost::system::error_code errorCode, std::size_t bytes)
+                                 {
+                                     std::cout << "Write request message to " << socket.remote_endpoint() << ": "
+                                               << errorCode.message() << ", bytes transferred: " << bytes << std::endl;
+                                 });
         break;
     }
     case MessageId::Cancel:
@@ -196,15 +260,15 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
     readMessage();
 }
 
-}
 namespace
 {
 std::pair<iterator, bool> messageMatch(iterator begin, iterator end)
 {
     const auto dataSize = end - begin;
 
-    if (dataSize < 5)
+    if (dataSize < 4)
     {
+        std::cout << "1. too less data in buffer" << std::endl;
         return {begin, false};
     }
 
@@ -216,14 +280,19 @@ std::pair<iterator, bool> messageMatch(iterator begin, iterator end)
 
     if (messageLength == 0)
     {
+        std::cout << "2. " << std::endl;
         return {begin + 4, false};
     }
 
     if (dataSize < messageLength + 4)
     {
+        std::cout << fmt::format("3. bytes in buffer: {}, message length: {}", dataSize, messageLength + 4)
+                  << std::endl;
         return {begin, false};
     }
 
+    std::cout << "4." << std::endl;
     return {begin + messageLength + 4, true};
+}
 }
 }

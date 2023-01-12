@@ -11,8 +11,7 @@ class PeerToPeerSessionImpl : public PeerToPeerSession
 {
 public:
     PeerToPeerSessionImpl(boost::asio::io_context& ioContext, common::collection::ThreadSafeQueue<int>&,
-                          PeerEndpoint peerEndpoint, std::string peerId);
-
+                          PeerEndpoint peerEndpoint, std::string peerId, int pieceSize);
     void startSession(const std::string& infoHash) override;
 
 private:
@@ -22,6 +21,7 @@ private:
     void onWriteUnchokeMessage(boost::system::error_code error, std::size_t bytes_transferred);
     void onWriteInterestedMessage(boost::system::error_code error, std::size_t bytes_transferred);
     void readMessage();
+    void onReadMessageLength(boost::system::error_code error, std::size_t bytes_transferred);
     void onReadMessage(boost::system::error_code error, std::size_t bytes_transferred);
 
     boost::asio::ip::tcp::socket socket;
@@ -30,5 +30,10 @@ private:
     common::collection::ThreadSafeQueue<int>& piecesQueue;
     PeerEndpoint peerEndpoint;
     const std::string peerId;
+    bool isChoked;
+    int pieceIndex;
+    int pieceSize;
+    int pieceBytesRead;
+    int maxBlockSize;
 };
 }

@@ -17,9 +17,9 @@ std::basic_string<unsigned char> MessageSerializer::serialize(const Message& mes
 
 Message MessageSerializer::deserialize(const std::basic_string<unsigned char>& message) const
 {
-    const auto messageId = MessageId(static_cast<unsigned int>(static_cast<unsigned char>(message[4])));
+    const auto messageId = MessageId(static_cast<unsigned int>(static_cast<unsigned char>(message[0])));
 
-    const auto messagePayload = message.substr(5, message.size() - 5);
+    const auto messagePayload = message.substr(1, message.size() - 1);
 
     return Message{messageId, messagePayload};
 }

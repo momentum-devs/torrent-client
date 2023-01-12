@@ -26,6 +26,8 @@ TorrentClient::TorrentClient(std::unique_ptr<common::fileSystem::FileSystemServi
 
 void TorrentClient::download(const std::string& torrentFilePath)
 {
+    srand(time(NULL));
+
     const auto torrentFileContent = fileSystemService->read(torrentFilePath);
 
     const auto torrentFileInfo = torrentFileDeserializer->deserialize(torrentFileContent);
@@ -55,12 +57,12 @@ void TorrentClient::download(const std::string& torrentFilePath)
 
     std::cout << fmt::format("Got list of {} peers.", response.peersEndpoints.size()) << std::endl;
 
-    const auto firstPeerEndpoint = response.peersEndpoints[29];
+    const auto firstPeerEndpoint = response.peersEndpoints[rand() % 50];
 
     boost::asio::io_context context;
 
-    std::unique_ptr<PeerToPeerSession> peerToPeerSession =
-        std::make_unique<PeerToPeerSessionImpl>(context, piecesQueue, firstPeerEndpoint, peerId);
+    std::unique_ptr<PeerToPeerSession> peerToPeerSession = std::make_unique<PeerToPeerSessionImpl>(
+        context, piecesQueue, firstPeerEndpoint, peerId, torrentFileInfo.pieceLength);
 
     peerToPeerSession->startSession(torrentFileInfo.infoHash);
 
