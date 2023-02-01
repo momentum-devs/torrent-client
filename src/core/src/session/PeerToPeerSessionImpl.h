@@ -1,6 +1,7 @@
 #include <boost/asio.hpp>
 
 #include "../tracker/PeerEndpoint.h"
+#include "bytes/Bitfield.h"
 #include "collection/ThreadSafeQueue.h"
 #include "HandshakeMessage.h"
 #include "PeerToPeerSession.h"
@@ -11,18 +12,15 @@ class PeerToPeerSessionImpl : public PeerToPeerSession
 {
 public:
     PeerToPeerSessionImpl(boost::asio::io_context& ioContext, common::collection::ThreadSafeQueue<int>&,
-                          PeerEndpoint peerEndpoint, std::string peerId, int pieceSize);
+                          const PeerEndpoint& peerEndpoint, const std::string& peerId, int pieceSize);
     void startSession(const std::string& infoHash) override;
 
 private:
     void sendHandshake(const HandshakeMessage& handshakeMessage);
-    void onWriteHandshake(boost::system::error_code error, std::size_t bytes_transferred);
-    void onReadHandshake(boost::system::error_code error, std::size_t bytes_transferred);
-    void onWriteUnchokeMessage(boost::system::error_code error, std::size_t bytes_transferred);
-    void onWriteInterestedMessage(boost::system::error_code error, std::size_t bytes_transferred);
-    void readMessage();
-    void onReadMessageLength(boost::system::error_code error, std::size_t bytes_transferred);
-    void onReadMessage(boost::system::error_code error, std::size_t bytes_transferred);
+    void onReadHandshake(boost::system::error_code error, std::size_t bytesTransferred, const std::string& infoHash);
+    void onReadMessageLength(boost::system::error_code error, std::size_t bytesTransferred);
+    void onReadMessage(boost::system::error_code error, std::size_t bytesTransferred, std::size_t bytesToRead);
+    void returnPieceToQueue();
 
     boost::asio::ip::tcp::socket socket;
     std::string request;
@@ -31,9 +29,10 @@ private:
     PeerEndpoint peerEndpoint;
     const std::string peerId;
     bool isChoked;
-    int pieceIndex;
+    std::optional<int> pieceIndex;
     int pieceSize;
     int pieceBytesRead;
     int maxBlockSize;
+    std::optional<common::bytes::Bitfield> bitfield;
 };
 }

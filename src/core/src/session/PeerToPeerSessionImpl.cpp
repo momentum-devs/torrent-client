@@ -6,7 +6,7 @@
 
 #include "bytes/Bitfield.h"
 #include "bytes/BytesConverter.h"
-#include "errors/PeerConnectionError.h"
+#include "encoder/HexEncoder.h"
 #include "HandshakeMessageSerializer.h"
 #include "MessageSerializer.h"
 
@@ -19,22 +19,24 @@ namespace core
 {
 PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
                                              common::collection::ThreadSafeQueue<int>& piecesQueueInit,
-                                             PeerEndpoint peerEndpointInit, std::string peerIdInit, int pieceSizeInit)
+                                             const PeerEndpoint& peerEndpointInit, const std::string& peerIdInit,
+                                             int pieceSizeInit)
     : socket(ioContext),
       piecesQueue{piecesQueueInit},
-      peerEndpoint{std::move(peerEndpointInit)},
-      peerId{std::move(peerIdInit)},
+      peerEndpoint{peerEndpointInit},
+      peerId{peerIdInit},
       isChoked{true},
-      pieceIndex{0},
+      pieceIndex{std::nullopt},
       pieceSize{pieceSizeInit},
       pieceBytesRead{0},
-      maxBlockSize{16384} // TODO: Make bigger number work property
+      maxBlockSize{16384},
+      bitfield{std::nullopt}
 {
 }
 
 void PeerToPeerSessionImpl::startSession(const std::string& infoHash)
 {
-    boost::asio::ip::address address = boost::asio::ip::make_address(peerEndpoint.address);
+    const auto address = boost::asio::ip::make_address(peerEndpoint.address);
 
     boost::asio::ip::tcp::endpoint endpoint(address, peerEndpoint.port);
 
@@ -44,7 +46,9 @@ void PeerToPeerSessionImpl::startSession(const std::string& infoHash)
 
     if (error)
     {
-        throw errors::PeerConnectionError{error.message()};
+        std::cerr << "PeerConnectionError: " << error.message() << std::endl;
+
+        return;
     }
 
     std::cout << "Connected to: " << endpoint << std::endl;
@@ -58,101 +62,85 @@ void PeerToPeerSessionImpl::sendHandshake(const HandshakeMessage& handshakeMessa
 {
     const auto serializedHandshakeMessage = HandshakeMessageSerializer().serialize(handshakeMessage);
 
-    std::cout << "Sending handshake message to: " << socket.remote_endpoint() << std::endl;
+    const auto infoHash = handshakeMessage.infoHash;
 
     boost::asio::async_write(socket, boost::asio::buffer(serializedHandshakeMessage),
-                             [this](boost::system::error_code errorCode, std::size_t bytes)
-                             { onWriteHandshake(errorCode, bytes); });
+                             [this, infoHash](boost::system::error_code, std::size_t bytesTransferred)
+                             {
+                                 std::cout << "Sent handshake to " << socket.remote_endpoint()
+                                           << ", bytes transferred: " << bytesTransferred << std::endl;
+
+                                 const auto numberOfBytesInHandshake = 68;
+
+                                 boost::asio::async_read(
+                                     socket, response, boost::asio::transfer_exactly(numberOfBytesInHandshake),
+                                     [this, infoHash](boost::system::error_code error, std::size_t bytes)
+                                     { onReadHandshake(error, bytes, infoHash); });
+                             });
 }
 
-void PeerToPeerSessionImpl::onWriteHandshake(boost::system::error_code error, std::size_t bytes_transferred)
+void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error, std::size_t bytesTransferred,
+                                            const std::string& infoHash)
 {
     if (error)
     {
         std::cerr << error.message() << std::endl;
-    }
 
-    std::cout << "Wrote handshake to " << socket.remote_endpoint() << ", bytes transferred: " << bytes_transferred
-              << std::endl;
-
-    const auto numberOfBytesInHandshake = 68;
-
-    boost::asio::async_read(socket, response, boost::asio::transfer_exactly(numberOfBytesInHandshake),
-                            [this](boost::system::error_code errorCode, std::size_t bytes)
-                            { onReadHandshake(errorCode, bytes); });
-}
-
-void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error, std::size_t bytes_transferred)
-{
-    if (error)
-    {
-        std::cerr << error.message() << std::endl;
-    }
-
-    std::cout << "Read handshake from " << socket.remote_endpoint() << ", bytes transferred: " << bytes_transferred
-              << std::endl;
-
-    readMessage();
-}
-
-void PeerToPeerSessionImpl::onWriteUnchokeMessage(boost::system::error_code error, std::size_t bytes_transferred)
-{
-    if (error)
-    {
-        std::cerr << error.message() << std::endl;
-    }
-
-    std::cout << "Write unchoke message to " << socket.remote_endpoint() << ", bytes transferred: " << bytes_transferred
-              << std::endl;
-
-    const auto interestedMessage = Message{MessageId::Interested, std::basic_string<unsigned char>{}};
-
-    const auto serializedInterestedMessage = MessageSerializer().serialize(interestedMessage);
-
-    boost::asio::async_write(socket, boost::asio::buffer(serializedInterestedMessage),
-                             [this](boost::system::error_code errorCode, std::size_t bytes)
-                             { onWriteInterestedMessage(errorCode, bytes); });
-}
-
-void PeerToPeerSessionImpl::onWriteInterestedMessage(boost::system::error_code error, std::size_t bytes_transferred)
-{
-    if (error)
-    {
-        std::cerr << error.message() << std::endl;
-    }
-
-    std::cout << "Write interested message to " << socket.remote_endpoint() << ": " << error.message()
-              << ", bytes transferred: " << bytes_transferred << std::endl;
-
-    readMessage();
-}
-
-void PeerToPeerSessionImpl::readMessage()
-{
-    boost::asio::async_read(socket, response, boost::asio::transfer_exactly(4),
-                            [this](boost::system::error_code errorCode, std::size_t bytes)
-                            { onReadMessageLength(errorCode, bytes); });
-}
-
-void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error, std::size_t bytes_transferred)
-{
-    std::cout << fmt::format("Reading message length which has {} bytes, bytes transferred: {}", response.size(),
-                             bytes_transferred)
-              << std::endl;
-
-    if (error)
-    {
-        std::cerr << error.message() << std::endl;
+        return;
     }
 
     const std::string data{std::istreambuf_iterator<char>(&response), std::istreambuf_iterator<char>()};
 
-    std::basic_string<unsigned char> bytes;
+    const auto receivedInfoHash = common::encoder::HexEncoder::encode(data.substr(28, 20));
 
-    for (const auto& dataEntry : data)
+    if (infoHash != receivedInfoHash)
     {
-        bytes += static_cast<unsigned char>(dataEntry);
+        std::cerr << fmt::format("Receive handshake with different info hash, should be {}, get {}.", infoHash,
+                                 receivedInfoHash)
+                  << std::endl;
+
+        return;
     }
+
+    std::cout << "Read handshake from " << socket.remote_endpoint() << ", bytes transferred: " << bytesTransferred
+              << std::endl;
+
+    boost::asio::async_read(socket, response, boost::asio::transfer_exactly(4),
+                            [this](boost::system::error_code error, std::size_t bytes)
+                            { onReadMessageLength(error, bytes); });
+}
+
+void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error, std::size_t)
+{
+    if (error)
+    {
+        returnPieceToQueue();
+
+        std::cerr << error.message() << std::endl;
+
+        return;
+    }
+
+    if (response.size() == 0) // Socket KeepAlive
+    {
+        boost::asio::async_read(socket, response, boost::asio::transfer_exactly(4),
+                                [this](boost::system::error_code error, std::size_t bytes)
+                                { onReadMessageLength(error, bytes); });
+
+        return;
+    }
+
+    if (response.size() != 4)
+    {
+        returnPieceToQueue();
+
+        std::cerr << fmt::format("Message length {} not equal 4.", response.size()) << std::endl;
+
+        return;
+    }
+
+    const std::basic_string<unsigned char> bytes{std::istreambuf_iterator<char>(&response),
+                                                 std::istreambuf_iterator<char>()};
 
     const auto bytesToRead = common::bytes::BytesConverter::bytesToInt(bytes);
 
@@ -160,28 +148,36 @@ void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error,
 
     if (bytesToRead == 0)
     {
-        readMessage();
+        boost::asio::async_read(socket, response, boost::asio::transfer_exactly(4),
+                                [this](boost::system::error_code error, std::size_t bytes)
+                                { onReadMessageLength(error, bytes); });
+
+        return;
     }
 
     boost::asio::async_read(socket, response, boost::asio::transfer_exactly(bytesToRead),
-                            [this](boost::system::error_code errorCode, std::size_t bytes)
-                            { onReadMessage(errorCode, bytes); });
+                            [this, bytesToRead](boost::system::error_code error, std::size_t bytes)
+                            { onReadMessage(error, bytes, bytesToRead); });
 }
 
-void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::size_t bytes_transferred)
+void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::size_t, std::size_t bytesToRead)
 {
-    std::cout << fmt::format("Reading message which has {} bytes, bytes transferred: {}", response.size(),
-                             bytes_transferred)
-              << std::endl;
-
     if (error)
     {
+        returnPieceToQueue();
+
         std::cerr << error.message() << std::endl;
+
+        return;
     }
 
-    if (bytes_transferred == 0 or bytes_transferred == 4)
+    if (response.size() != bytesToRead)
     {
-        readMessage();
+        returnPieceToQueue();
+
+        std::cerr << fmt::format("Message length {} not equal {}.", response.size(), bytesToRead) << std::endl;
+
+        return;
     }
 
     const std::basic_string<unsigned char> data{std::istreambuf_iterator<char>(&response),
@@ -189,110 +185,223 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
 
     const auto message = MessageSerializer().deserialize(data);
 
+    std::cout << fmt::format("Received message {} which has {} bytes.", toString(message.id), bytesToRead) << std::endl;
+
     switch (message.id)
     {
     case MessageId::Bitfield:
     {
         const auto bitfieldData = data.substr(5);
 
-        const auto bitfield = common::bytes::Bitfield{bitfieldData};
+        bitfield.emplace(common::bytes::Bitfield{bitfieldData});
 
-        std::cout << "Bitfield: " << bitfield.toString() << std::endl;
+        const auto interestedMessage = Message{MessageId::Interested, std::basic_string<unsigned char>{}};
 
-        const auto unchokeMessage = Message{MessageId::Unchoke, std::basic_string<unsigned char>{}};
+        const auto serializedInterestedMessage = MessageSerializer().serialize(interestedMessage);
 
-        const auto serializedUnchokeMessage = MessageSerializer().serialize(unchokeMessage);
+        boost::asio::async_write(socket, boost::asio::buffer(serializedInterestedMessage),
+                                 [this](boost::system::error_code error, std::size_t bytesTransferred)
+                                 {
+                                     if (error)
+                                     {
+                                         returnPieceToQueue();
 
-        boost::asio::async_write(socket, boost::asio::buffer(serializedUnchokeMessage),
-                                 [this](boost::system::error_code errorCode, std::size_t bytes)
-                                 { onWriteUnchokeMessage(errorCode, bytes); });
+                                         std::cerr << error.message() << std::endl;
+
+                                         return;
+                                     }
+
+                                     std::cout << "Sent interested message to " << socket.remote_endpoint()
+                                               << ", bytes transferred: " << bytesTransferred << std::endl;
+                                 });
+
         break;
     }
     case MessageId::Unchoke:
     {
+        if (!isChoked)
+        {
+            break;
+        }
+
         isChoked = false;
 
+        auto numberOfPiecesIndexes = static_cast<int>(piecesQueue.size());
+
+        auto piecesIndexIter = 0;
+
+        for(; piecesIndexIter < numberOfPiecesIndexes; ++piecesIndexIter)
+        {
+            pieceIndex = piecesQueue.pop();
+
+            if (!pieceIndex)
+            {
+                std::cout << "No piece in queue - close connection" << std::endl;
+
+                return;
+            }
+
+            if (bitfield->hasBitSet(*pieceIndex))
+            {
+                break;
+            }
+            else
+            {
+                piecesQueue.push(*pieceIndex);
+            }
+        }
+
+        if(piecesIndexIter == numberOfPiecesIndexes)
+        {
+            std::cout << "No piece in queue available - close connection" << std::endl;
+
+            return;
+        }
+
         const auto requestMessage =
-            Message{MessageId::Request, common::bytes::BytesConverter::intToBytes(pieceIndex) +
+            Message{MessageId::Request, common::bytes::BytesConverter::intToBytes(*pieceIndex) +
                                             common::bytes::BytesConverter::intToBytes(pieceBytesRead) +
                                             common::bytes::BytesConverter::intToBytes(maxBlockSize)};
 
-        auto serializedRequestMessage = MessageSerializer().serialize(requestMessage);
+        const auto serializedRequestMessage = MessageSerializer().serialize(requestMessage);
 
-        boost::asio::async_write(socket, boost::asio::buffer(serializedRequestMessage),
-                                 [this](boost::system::error_code errorCode, std::size_t bytes)
-                                 {
-                                     std::cout << "Write request message to " << socket.remote_endpoint() << ": "
-                                               << errorCode.message() << ", bytes transferred: " << bytes << std::endl;
-                                 });
+        boost::asio::async_write(
+            socket, boost::asio::buffer(serializedRequestMessage),
+            [this](boost::system::error_code error, std::size_t bytes)
+            {
+                if (error)
+                {
+                    returnPieceToQueue();
+
+                    std::cerr << error.message() << std::endl;
+
+                    return;
+                }
+
+                std::cout << "Sent request message to " << socket.remote_endpoint()
+                          << fmt::format(
+                                 " to download piece {}, beginning {}, bytes to read {}.\nBytes transferred: {}",
+                                 *pieceIndex, pieceBytesRead, maxBlockSize, bytes)
+                          << std::endl;
+            });
         break;
     }
     case MessageId::Choke:
     {
         isChoked = true;
+
+        returnPieceToQueue();
+
         break;
     }
     case MessageId::Piece:
     {
         pieceBytesRead += maxBlockSize;
 
-        std::cout << pieceBytesRead << '/' << pieceSize << std::endl;
+        const auto blockPieceIndex = common::bytes::BytesConverter::bytesToInt(message.payload.substr(0, 4));
+
+        const auto blockNumber = common::bytes::BytesConverter::bytesToInt(message.payload.substr(4, 4));
+
+        std::cout << fmt::format("Downloaded {} part of the piece {}. Downloaded {} of {} bytes.", blockNumber,
+                                 *pieceIndex, pieceBytesRead, pieceSize)
+                  << std::endl;
 
         if (pieceBytesRead >= pieceSize)
         {
-            std::cout << "piece " << pieceIndex << " downloaded" << std::endl;
-            break;
+            std::cout << "Piece " << blockPieceIndex << " downloaded" << std::endl;
+
+            auto numberOfPiecesIndexes = static_cast<int>(piecesQueue.size());
+
+            auto piecesIndexIter = 0;
+
+            for(; piecesIndexIter < numberOfPiecesIndexes; ++piecesIndexIter)
+            {
+                pieceIndex = piecesQueue.pop();
+
+                if (!pieceIndex)
+                {
+                    std::cout << "No piece in queue - close connection" << std::endl;
+
+                    return;
+                }
+
+                if (bitfield->hasBitSet(*pieceIndex))
+                {
+                    break;
+                }
+                else
+                {
+                    piecesQueue.push(*pieceIndex);
+                }
+            }
+
+            if(piecesIndexIter == numberOfPiecesIndexes)
+            {
+                std::cout << "No piece in queue available - close connection" << std::endl;
+
+                return;
+            }
+
+            pieceBytesRead = 0;
+
+            std::cout << "Start downloading piece " << *pieceIndex << std::endl;
         }
 
-        if (pieceSize - pieceBytesRead < maxBlockSize)
-        {
-            maxBlockSize = pieceSize - pieceBytesRead;
-        }
+        const auto byteToRequest =
+            (pieceSize - pieceBytesRead < maxBlockSize) ? pieceSize - pieceBytesRead : maxBlockSize;
 
         const auto requestMessage =
-            Message{MessageId::Request, common::bytes::BytesConverter::intToBytes(pieceIndex) +
+            Message{MessageId::Request, common::bytes::BytesConverter::intToBytes(*pieceIndex) +
                                             common::bytes::BytesConverter::intToBytes(pieceBytesRead) +
-                                            common::bytes::BytesConverter::intToBytes(maxBlockSize)};
+                                            common::bytes::BytesConverter::intToBytes(byteToRequest)};
 
-        auto serializedRequestMessage = MessageSerializer().serialize(requestMessage);
+        const auto serializedRequestMessage = MessageSerializer().serialize(requestMessage);
 
-        boost::asio::async_write(socket, boost::asio::buffer(serializedRequestMessage),
-                                 [this](boost::system::error_code errorCode, std::size_t bytes)
-                                 {
-                                     std::cout << "Wrote request message to " << socket.remote_endpoint() << ": "
-                                               << errorCode.message() << ", bytes transferred: " << bytes << std::endl;
-                                 });
-        break;
-    }
-    case MessageId::Cancel:
-    {
-        // TODO: Implement
+        boost::asio::async_write(
+            socket, boost::asio::buffer(serializedRequestMessage),
+            [this, byteToRequest](boost::system::error_code error, std::size_t bytes)
+            {
+                if (error)
+                {
+                    returnPieceToQueue();
+
+                    std::cerr << error.message() << std::endl;
+
+                    return;
+                }
+
+                std::cout << "Sent request message to " << socket.remote_endpoint()
+                          << fmt::format(
+                                 " to download piece {}, beginning {}, bytes to read {}.\nBytes transferred: {}",
+                                 *pieceIndex, pieceBytesRead, byteToRequest, bytes)
+                          << std::endl;
+            });
+
         break;
     }
     case MessageId::Have:
     {
-        // TODO: Implement
-        break;
-    }
-    case MessageId::Interested:
-    {
-        // TODO: Implement
-        break;
-    }
-    case MessageId::NotInterested:
-    {
-        // TODO: Implement
-        break;
-    }
-    case MessageId::Request:
-    {
-        // TODO: Implement
+        const auto newPieceIndex = common::bytes::BytesConverter::bytesToInt(message.payload);
+
+        bitfield->setBit(newPieceIndex);
+
         break;
     }
     default:
         break;
     }
 
-    readMessage();
+    boost::asio::async_read(socket, response, boost::asio::transfer_exactly(4),
+                            [this](boost::system::error_code error, std::size_t bytes)
+                            { onReadMessageLength(error, bytes); });
+}
+
+void PeerToPeerSessionImpl::returnPieceToQueue()
+{
+    if (pieceIndex)
+    {
+        piecesQueue.push(pieceIndex.value());
+        pieceIndex = std::nullopt;
+    }
 }
 }

@@ -48,3 +48,12 @@ TEST_F(BitfieldTest, givenBitfieldWithOneZerosAndOtherOnes_shouldReturnCorrectBi
     ASSERT_TRUE(bitfield.hasBitSet(6));
     ASSERT_TRUE(bitfield.hasBitSet(7));
 }
+
+TEST_F(BitfieldTest, setBit)
+{
+    ASSERT_FALSE(bitfield.hasBitSet(0));
+
+    bitfield.setBit(0);
+
+    ASSERT_TRUE(bitfield.hasBitSet(0));
+}

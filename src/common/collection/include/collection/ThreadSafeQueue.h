@@ -73,6 +73,13 @@ public:
         return queue.empty();
     }
 
+    std::size_t size() const
+    {
+        std::lock_guard<std::mutex> guard(lock);
+
+        return queue.size();
+    }
+
 private:
     std::queue<T> queue;
     mutable std::mutex lock;

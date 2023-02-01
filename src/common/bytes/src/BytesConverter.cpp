@@ -1,6 +1,5 @@
 #include "BytesConverter.h"
 
-#include <iostream>
 #include <stdexcept>
 
 #include "fmt/format.h"
@@ -32,15 +31,12 @@ unsigned int BytesConverter::bytesToInt(const std::basic_string<unsigned char>& 
             "Invalid number of bytes in integer, provided {} bytes, expected {} bytes", bytes.size(), bytesInInteger)};
     }
 
-    const auto byte1 = bytes[0] << 24;
-    const auto byte2 = bytes[1] << 16;
-    const auto byte3 = bytes[2] << 8;
-    const auto byte4 = bytes[3];
+    const auto byte1 = static_cast<unsigned int>(bytes[0]) << 24;
+    const auto byte2 = static_cast<unsigned int>(bytes[1]) << 16;
+    const auto byte3 = static_cast<unsigned int>(bytes[2]) << 8;
+    const auto byte4 = static_cast<unsigned int>(bytes[3]);
 
     auto data = byte1 + byte2 + byte3 + byte4;
-
-    std::cout << fmt::format("Bytes {},{},{},{} converted to integer {}", bytes[0], bytes[1], bytes[2], bytes[3], data)
-              << std::endl;
 
     return data;
 }

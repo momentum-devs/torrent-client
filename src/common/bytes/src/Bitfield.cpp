@@ -4,7 +4,7 @@ namespace common::bytes
 {
 Bitfield::Bitfield(const std::basic_string<unsigned char>& dataInit) : data{initializeData(dataInit)} {}
 
-bool Bitfield::hasBitSet(int bitIndex) const
+bool Bitfield::hasBitSet(unsigned int bitIndex) const
 {
     return data.at(bitIndex);
 }
@@ -24,6 +24,14 @@ std::string Bitfield::toString() const
 std::size_t Bitfield::size() const
 {
     return data.size();
+}
+
+void Bitfield::setBit(unsigned int bitIndex)
+{
+    if (bitIndex < static_cast<unsigned int>(data.size()))
+    {
+        data[bitIndex] = true;
+    }
 }
 
 std::vector<bool> Bitfield::initializeData(const std::basic_string<unsigned char>& dataInit) const

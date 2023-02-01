@@ -10,14 +10,15 @@ class Bitfield
 public:
     explicit Bitfield(const std::basic_string<unsigned char>& data);
 
-    bool hasBitSet(int bitIndex) const;
+    bool hasBitSet(unsigned int bitIndex) const;
     std::string toString() const;
     std::size_t size() const;
+    void setBit(unsigned int bitIndex);
 
 private:
     std::vector<bool> initializeData(const std::basic_string<unsigned char>& data) const;
 
-    const std::vector<bool> data;
+    std::vector<bool> data;
 };
 
 }

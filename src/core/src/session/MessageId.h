@@ -4,8 +4,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "errors/MessageIdMappingNotFoundError.h"
-
 namespace core
 {
 enum MessageId
@@ -41,7 +39,7 @@ inline std::string toString(MessageId messageId)
     }
     catch (const std::out_of_range& e)
     {
-        throw errors::MessageIdMappingNotFoundNotError{e.what()};
+        return "Undefined";
     }
 }
 
