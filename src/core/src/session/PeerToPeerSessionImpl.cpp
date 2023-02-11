@@ -36,7 +36,7 @@ PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
 {
 }
 
-void PeerToPeerSessionImpl::startSession(const std::string& infoHash)
+void PeerToPeerSessionImpl::startSession()
 {
     const auto address = boost::asio::ip::make_address(peerEndpoint.address);
 
@@ -44,20 +44,23 @@ void PeerToPeerSessionImpl::startSession(const std::string& infoHash)
 
     boost::system::error_code error;
 
-    socket.connect(endpoint, error);
+    socket.async_connect(
+        endpoint,
+        [this](boost::system::error_code error)
+        {
+            if (error)
+            {
+                std::cerr << "PeerConnectionError: " << error.message() << std::endl;
 
-    if (error)
-    {
-        std::cerr << "PeerConnectionError: " << error.message() << std::endl;
+                hasErrorOccurred = true;
 
-        hasErrorOccurred = true;
+                return;
+            }
 
-        return;
-    }
+            const auto handshakeMessage = HandshakeMessage{"BitTorrent protocol", torrentFileInfo->infoHash, peerId};
 
-    const auto handshakeMessage = HandshakeMessage{"BitTorrent protocol", infoHash, peerId};
-
-    sendHandshake(handshakeMessage);
+            sendHandshake(handshakeMessage);
+        });
 }
 
 void PeerToPeerSessionImpl::sendHandshake(const HandshakeMessage& handshakeMessage)
@@ -161,7 +164,7 @@ void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error,
               { onReadMessage(error, bytes, bytesToRead); });
 }
 
-void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::size_t, std::size_t bytesToRead)
+void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::size_t bytes, std::size_t bytesToRead)
 {
     if (error)
     {
@@ -190,7 +193,7 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
     {
     case MessageId::Bitfield:
     {
-        const auto bitfieldData = data.substr(5);
+        const auto bitfieldData = data.substr(1);
 
         bitfield.emplace(common::bytes::Bitfield{bitfieldData});
 

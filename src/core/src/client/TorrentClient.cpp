@@ -60,14 +60,16 @@ void TorrentClient::download(const std::string& torrentFilePath)
 
     std::cout << fmt::format("Got list of {} peers.", response.peersEndpoints.size()) << std::endl;
 
-    const auto firstPeerEndpoint = response.peersEndpoints[rand() % 50];
-
     boost::asio::io_context context;
 
-    std::unique_ptr<PeerToPeerSession> peerToPeerSession =
-        std::make_unique<PeerToPeerSessionImpl>(context, piecesQueue, firstPeerEndpoint, peerId, torrentFileInfo);
+    std::vector<std::unique_ptr<PeerToPeerSession>> sessions;
 
-    peerToPeerSession->startSession(torrentFileInfo->infoHash);
+    for (const auto& peerEndpoint : response.peersEndpoints)
+    {
+        sessions.push_back(
+            std::make_unique<PeerToPeerSessionImpl>(context, piecesQueue, peerEndpoint, peerId, torrentFileInfo));
+        sessions.back()->startSession();
+    }
 
     context.run();
 }

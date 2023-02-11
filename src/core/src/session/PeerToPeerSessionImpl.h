@@ -15,7 +15,7 @@ public:
     PeerToPeerSessionImpl(boost::asio::io_context& ioContext, common::collection::ThreadSafeQueue<int>&,
                           const PeerEndpoint& peerEndpoint, const std::string& peerId,
                           const std::shared_ptr<TorrentFileInfo> torrentFileInfo);
-    void startSession(const std::string& infoHash) override;
+    void startSession() override;
 
 private:
     void sendHandshake(const HandshakeMessage& handshakeMessage);
