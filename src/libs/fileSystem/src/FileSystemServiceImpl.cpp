@@ -1,10 +1,12 @@
 #include "FileSystemServiceImpl.h"
 
+#include <filesystem>
 #include <fstream>
-#include <sstream>
+#include <iostream>
+
+#include "fmt/core.h"
 
 #include "errors/FileNotFound.h"
-#include "fmt/core.h"
 
 namespace libs::fileSystem
 {
@@ -18,6 +20,26 @@ void FileSystemServiceImpl::write(const std::string& absolutePath, const std::st
     }
 
     fileStream << content;
+}
+
+void FileSystemServiceImpl::writeAtPosition(const std::string& absolutePath, const std::string& data,
+                                            unsigned int position) const
+{
+    if (not exists(absolutePath))
+    {
+        std::ofstream{absolutePath};
+    }
+
+    std::ofstream fileStream{absolutePath, std::ios::binary | std::ios::in | std::ios::out};
+
+    if (!fileStream.is_open())
+    {
+        throw errors::FileNotFound(fmt::format("file not found: {}", absolutePath));
+    }
+
+    fileStream.seekp(position, std::ios::beg);
+
+    fileStream.write(data.c_str(), static_cast<long>(data.size()));
 }
 
 void FileSystemServiceImpl::append(const std::string& absolutePath, const std::string& content) const
@@ -47,4 +69,10 @@ std::string FileSystemServiceImpl::read(const std::string& absolutePath) const
 
     return buffer.str();
 }
+
+bool FileSystemServiceImpl::exists(const std::string& absolutePath) const
+{
+    return std::filesystem::exists(absolutePath);
+}
+
 }

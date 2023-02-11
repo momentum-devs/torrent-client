@@ -6,6 +6,7 @@ set(SOURCES
         )
 
 set(UT_SOURCES
+        src/FileSystemServiceImplTest.cpp
         src/GetExecutablePathTest.cpp
         src/GetProjectPathTest.cpp
         )
