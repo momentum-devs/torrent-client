@@ -14,6 +14,7 @@ set(GMOCK_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/externals/googletest/googlemock/inclu
 set(GTEST_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/externals/googletest/googletest/include")
 set(BENCODE_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/externals/bencode.hpp/include")
 set(CPR_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/externals/cpr/include")
+set(JSON_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/externals/json/include")
 
 enable_testing()
 

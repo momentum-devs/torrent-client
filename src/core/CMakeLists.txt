@@ -28,6 +28,7 @@ target_include_directories(core
         PRIVATE
         ${Boost_INCLUDE_DIR}
         ${BENCODE_INCLUDE_DIR}
+        ${JSON_INCLUDE_DIR}
         )
 
 target_include_directories(coreUT PRIVATE
@@ -35,6 +36,7 @@ target_include_directories(coreUT PRIVATE
         ${Boost_INCLUDE_DIR}
         ${BENCODE_INCLUDE_DIR}
         ${GTEST_INCLUDE_DIR}
+        ${JSON_INCLUDE_DIR}
         )
 
 target_link_libraries(core PRIVATE collection fileSystem httpClient encoder bytes fmt)
