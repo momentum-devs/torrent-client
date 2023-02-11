@@ -9,6 +9,6 @@ class PeerToPeerSession
 public:
     virtual ~PeerToPeerSession() = default;
 
-    virtual void startSession(const std::string& hashInfo) = 0;
+    virtual void startSession() = 0;
 };
 }

@@ -9,6 +9,7 @@ set(SOURCES
         src/session/PieceRepositoryImpl.cpp
         src/client/TorrentClient.cpp
         src/session/PiecesSerializerImpl.cpp
+        src/session/HashValidator.cpp
         )
 
 set(UT_SOURCES
@@ -17,6 +18,7 @@ set(UT_SOURCES
         src/tracker/AnnounceResponseDeserializerImplTest.cpp
         src/session/HandshakeMessageSerializerTest.cpp
         src/session/MessageSerializerTest.cpp
+        src/session/HashValidatorTest.cpp
         src/session/PieceRepositoryImplTest.cpp
         src/session/PiecesSerializerImplTest.cpp
         )

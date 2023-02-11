@@ -1,5 +1,6 @@
 #include <boost/asio.hpp>
 
+#include "../torrentFile/TorrentFileInfo.h"
 #include "../tracker/PeerEndpoint.h"
 #include "bytes/Bitfield.h"
 #include "collection/ThreadSafeQueue.h"
@@ -12,15 +13,19 @@ class PeerToPeerSessionImpl : public PeerToPeerSession
 {
 public:
     PeerToPeerSessionImpl(boost::asio::io_context& ioContext, libs::collection::ThreadSafeQueue<int>&,
-                          const PeerEndpoint& peerEndpoint, const std::string& peerId, int pieceSize);
-    void startSession(const std::string& infoHash) override;
+                          const PeerEndpoint& peerEndpoint, const std::string& peerId,
+                          const std::shared_ptr<TorrentFileInfo> torrentFileInfo);
+    void startSession() override;
 
 private:
     void sendHandshake(const HandshakeMessage& handshakeMessage);
-    void onReadHandshake(boost::system::error_code error, std::size_t bytesTransferred, const std::string& infoHash);
+    void onReadHandshake(boost::system::error_code error);
     void onReadMessageLength(boost::system::error_code error, std::size_t bytesTransferred);
     void onReadMessage(boost::system::error_code error, std::size_t bytesTransferred, std::size_t bytesToRead);
     void returnPieceToQueue();
+    void asyncRead(std::size_t bytesToRead, std::function<void(boost::system::error_code, std::size_t)> readHandler);
+    void asyncWrite(boost::asio::const_buffer writeBuffer,
+                    std::function<void(boost::system::error_code, std::size_t)> writeHandler);
 
     boost::asio::ip::tcp::socket socket;
     std::string request;
@@ -29,10 +34,13 @@ private:
     PeerEndpoint peerEndpoint;
     const std::string peerId;
     bool isChoked;
+    bool hasErrorOccurred;
     std::optional<int> pieceIndex;
-    int pieceSize;
+    const std::shared_ptr<TorrentFileInfo> torrentFileInfo;
     int pieceBytesRead;
     int maxBlockSize;
     std::optional<libs::bytes::Bitfield> bitfield;
+    std::basic_string<unsigned char> pieceData;
+    boost::asio::ip::basic_endpoint<boost::asio::ip::tcp> endpoint;
 };
 }
