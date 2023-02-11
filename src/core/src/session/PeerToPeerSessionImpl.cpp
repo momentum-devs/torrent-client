@@ -57,6 +57,8 @@ void PeerToPeerSessionImpl::startSession()
                 return;
             }
 
+            this->endpoint = socket.remote_endpoint();
+
             const auto handshakeMessage = HandshakeMessage{"BitTorrent protocol", torrentFileInfo->infoHash, peerId};
 
             sendHandshake(handshakeMessage);
@@ -90,7 +92,7 @@ void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error, std
 {
     if (error)
     {
-        std::cerr << error.message() << std::endl;
+        std::cerr << endpoint << " : " << error.message() << std::endl;
 
         hasErrorOccurred = true;
 
@@ -123,7 +125,7 @@ void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error,
     {
         returnPieceToQueue();
 
-        std::cerr << error.message() << std::endl;
+        std::cerr << endpoint << " : " << error.message() << std::endl;
 
         hasErrorOccurred = true;
 
@@ -164,13 +166,13 @@ void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error,
               { onReadMessage(error, bytes, bytesToRead); });
 }
 
-void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::size_t bytes, std::size_t bytesToRead)
+void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::size_t, std::size_t bytesToRead)
 {
     if (error)
     {
         returnPieceToQueue();
 
-        std::cerr << error.message() << std::endl;
+        std::cerr << endpoint << ", " << *pieceIndex << " : " << error.message() << std::endl;
 
         hasErrorOccurred = true;
 

@@ -71,6 +71,21 @@ void TorrentClient::download(const std::string& torrentFilePath)
         sessions.back()->startSession();
     }
 
-    context.run();
+    std::vector<std::thread> threads;
+
+    auto count = std::thread::hardware_concurrency() * 2;
+
+    for (int n = 0; n < count; ++n)
+    {
+        threads.emplace_back([&] { context.run(); });
+    }
+
+    for (auto& thread : threads)
+    {
+        if (thread.joinable())
+        {
+            thread.join();
+        }
+    }
 }
 }

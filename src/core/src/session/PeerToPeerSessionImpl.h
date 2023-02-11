@@ -41,5 +41,6 @@ private:
     int maxBlockSize;
     std::optional<common::bytes::Bitfield> bitfield;
     std::basic_string<unsigned char> pieceData;
+    boost::asio::ip::basic_endpoint<boost::asio::ip::tcp> endpoint;
 };
 }
