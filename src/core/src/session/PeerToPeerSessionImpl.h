@@ -1,5 +1,6 @@
 #include <boost/asio.hpp>
 
+#include "../torrentFile/TorrentFileInfo.h"
 #include "../tracker/PeerEndpoint.h"
 #include "bytes/Bitfield.h"
 #include "collection/ThreadSafeQueue.h"
@@ -12,12 +13,13 @@ class PeerToPeerSessionImpl : public PeerToPeerSession
 {
 public:
     PeerToPeerSessionImpl(boost::asio::io_context& ioContext, common::collection::ThreadSafeQueue<int>&,
-                          const PeerEndpoint& peerEndpoint, const std::string& peerId, int pieceSize);
+                          const PeerEndpoint& peerEndpoint, const std::string& peerId,
+                          const std::shared_ptr<TorrentFileInfo> torrentFileInfo);
     void startSession(const std::string& infoHash) override;
 
 private:
     void sendHandshake(const HandshakeMessage& handshakeMessage);
-    void onReadHandshake(boost::system::error_code error, std::size_t bytesTransferred, const std::string& infoHash);
+    void onReadHandshake(boost::system::error_code error, std::size_t bytesTransferred);
     void onReadMessageLength(boost::system::error_code error, std::size_t bytesTransferred);
     void onReadMessage(boost::system::error_code error, std::size_t bytesTransferred, std::size_t bytesToRead);
     void returnPieceToQueue();
@@ -34,9 +36,10 @@ private:
     bool isChoked;
     bool hasErrorOccurred;
     std::optional<int> pieceIndex;
-    int pieceSize;
+    const std::shared_ptr<TorrentFileInfo> torrentFileInfo;
     int pieceBytesRead;
     int maxBlockSize;
     std::optional<common::bytes::Bitfield> bitfield;
+    std::basic_string<unsigned char> pieceData;
 };
 }

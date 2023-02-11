@@ -30,11 +30,14 @@ void TorrentClient::download(const std::string& torrentFilePath)
 
     const auto torrentFileContent = fileSystemService->read(torrentFilePath);
 
-    const auto torrentFileInfo = torrentFileDeserializer->deserialize(torrentFileContent);
+    const auto torrentFileInfo =
+        std::make_shared<TorrentFileInfo>(torrentFileDeserializer->deserialize(torrentFileContent));
 
-    const auto numberOfPieces = static_cast<unsigned>(torrentFileInfo.piecesHashes.size());
+    const auto numberOfPieces = static_cast<unsigned>(torrentFileInfo->piecesHashes.size());
 
-    std::cout << fmt::format("File has {} pieces, each piece has {} bytes.", numberOfPieces, torrentFileInfo.pieceLength) << std::endl;
+    std::cout << fmt::format("File has {} pieces, each piece has {} bytes.", numberOfPieces,
+                             torrentFileInfo->pieceLength)
+              << std::endl;
 
     std::vector<int> iotaData(numberOfPieces);
 
@@ -44,13 +47,13 @@ void TorrentClient::download(const std::string& torrentFilePath)
 
     const auto peerId = PeerIdGenerator::generate();
 
-    const auto retrievePeersPayload = RetrievePeersPayload{torrentFileInfo.announce,
-                                                           torrentFileInfo.infoHash,
+    const auto retrievePeersPayload = RetrievePeersPayload{torrentFileInfo->announce,
+                                                           torrentFileInfo->infoHash,
                                                            peerId,
                                                            "0",
                                                            "0",
                                                            "0",
-                                                           std::to_string(torrentFileInfo.length),
+                                                           std::to_string(torrentFileInfo->length),
                                                            "1"};
 
     const auto response = peerRetriever->retrievePeers(retrievePeersPayload);
@@ -61,10 +64,10 @@ void TorrentClient::download(const std::string& torrentFilePath)
 
     boost::asio::io_context context;
 
-    std::unique_ptr<PeerToPeerSession> peerToPeerSession = std::make_unique<PeerToPeerSessionImpl>(
-        context, piecesQueue, firstPeerEndpoint, peerId, torrentFileInfo.pieceLength);
+    std::unique_ptr<PeerToPeerSession> peerToPeerSession =
+        std::make_unique<PeerToPeerSessionImpl>(context, piecesQueue, firstPeerEndpoint, peerId, torrentFileInfo);
 
-    peerToPeerSession->startSession(torrentFileInfo.infoHash);
+    peerToPeerSession->startSession(torrentFileInfo->infoHash);
 
     context.run();
 }

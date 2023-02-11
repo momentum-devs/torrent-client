@@ -7,7 +7,7 @@ set(SOURCES
         src/session/PeerToPeerSessionImpl.cpp
         src/session/MessageSerializer.cpp
         src/client/TorrentClient.cpp
-        )
+        src/session/HashValidator.cpp)
 
 set(UT_SOURCES
         src/tracker/PeersRetrieverImplTest.cpp
@@ -15,7 +15,7 @@ set(UT_SOURCES
         src/tracker/AnnounceResponseDeserializerImplTest.cpp
         src/session/HandshakeMessageSerializerTest.cpp
         src/session/MessageSerializerTest.cpp
-        )
+        src/session/HashValidatorTest.cpp)
 
 add_library(core ${SOURCES})
 add_executable(coreUT ${SOURCES} ${UT_SOURCES})

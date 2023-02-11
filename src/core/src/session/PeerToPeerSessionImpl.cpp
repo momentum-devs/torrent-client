@@ -6,8 +6,8 @@
 
 #include "bytes/Bitfield.h"
 #include "bytes/BytesConverter.h"
-#include "encoder/HexEncoder.h"
 #include "HandshakeMessageSerializer.h"
+#include "HashValidator.h"
 #include "MessageSerializer.h"
 
 namespace
@@ -20,7 +20,7 @@ namespace core
 PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
                                              common::collection::ThreadSafeQueue<int>& piecesQueueInit,
                                              const PeerEndpoint& peerEndpointInit, const std::string& peerIdInit,
-                                             int pieceSizeInit)
+                                             const std::shared_ptr<TorrentFileInfo> torrentFileInfoInit)
     : socket(ioContext),
       piecesQueue{piecesQueueInit},
       peerEndpoint{peerEndpointInit},
@@ -28,10 +28,11 @@ PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
       isChoked{true},
       hasErrorOccurred{false},
       pieceIndex{std::nullopt},
-      pieceSize{pieceSizeInit},
+      torrentFileInfo{torrentFileInfoInit},
       pieceBytesRead{0},
       maxBlockSize{16384},
-      bitfield{std::nullopt}
+      bitfield{std::nullopt},
+      pieceData{}
 {
 }
 
@@ -54,8 +55,6 @@ void PeerToPeerSessionImpl::startSession(const std::string& infoHash)
         return;
     }
 
-    std::cout << "Connected to: " << endpoint << std::endl;
-
     const auto handshakeMessage = HandshakeMessage{"BitTorrent protocol", infoHash, peerId};
 
     sendHandshake(handshakeMessage);
@@ -65,10 +64,8 @@ void PeerToPeerSessionImpl::sendHandshake(const HandshakeMessage& handshakeMessa
 {
     const auto serializedHandshakeMessage = HandshakeMessageSerializer().serialize(handshakeMessage);
 
-    const auto infoHash = handshakeMessage.infoHash;
-
     asyncWrite(boost::asio::buffer(serializedHandshakeMessage),
-               [this, infoHash](boost::system::error_code error, std::size_t bytesTransferred)
+               [this](boost::system::error_code error, std::size_t bytesTransferred)
                {
                    if (error)
                    {
@@ -79,19 +76,14 @@ void PeerToPeerSessionImpl::sendHandshake(const HandshakeMessage& handshakeMessa
                        return;
                    }
 
-                   std::cout << "Sent handshake to " << socket.remote_endpoint()
-                             << ", bytes transferred: " << bytesTransferred << std::endl;
-
                    const auto numberOfBytesInHandshake = 68;
 
-                   asyncRead(numberOfBytesInHandshake,
-                             [this, infoHash](boost::system::error_code error, std::size_t bytes)
-                             { onReadHandshake(error, bytes, infoHash); });
+                   asyncRead(numberOfBytesInHandshake, [this](boost::system::error_code error, std::size_t bytes)
+                             { onReadHandshake(error, bytes); });
                });
 }
 
-void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error, std::size_t bytesTransferred,
-                                            const std::string& infoHash)
+void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error, std::size_t bytesTransferred)
 {
     if (error)
     {
@@ -104,12 +96,12 @@ void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error, std
 
     const std::string data{std::istreambuf_iterator<char>(&response), std::istreambuf_iterator<char>()};
 
-    const auto receivedInfoHash = common::encoder::HexEncoder::encode(data.substr(28, 20));
+    const auto receivedInfoHash = data.substr(28, 20);
 
-    if (infoHash != receivedInfoHash)
+    if (not HashValidator::compareHashes(torrentFileInfo->infoHash, receivedInfoHash))
     {
-        std::cerr << fmt::format("Receive handshake with different info hash, should be {}, get {}.", infoHash,
-                                 receivedInfoHash)
+        std::cerr << fmt::format("Receive handshake with different info hash, should be {}, get {}.",
+                                 torrentFileInfo->infoHash, receivedInfoHash)
                   << std::endl;
 
         hasErrorOccurred = true;
@@ -117,8 +109,7 @@ void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error, std
         return;
     }
 
-    std::cout << "Read handshake from " << socket.remote_endpoint() << ", bytes transferred: " << bytesTransferred
-              << std::endl;
+    std::cout << "Read handshake from " << socket.remote_endpoint() << std::endl;
 
     asyncRead(4, [this](boost::system::error_code error, std::size_t bytes) { onReadMessageLength(error, bytes); });
 }
@@ -159,8 +150,6 @@ void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error,
 
     const auto bytesToRead = common::bytes::BytesConverter::bytesToInt(bytes);
 
-    std::cout << fmt::format("{} bytes should be read from payload data.", bytesToRead) << std::endl;
-
     if (bytesToRead == 0)
     {
         asyncRead(4, [this](boost::system::error_code error, std::size_t bytes) { onReadMessageLength(error, bytes); });
@@ -189,8 +178,6 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
     {
         returnPieceToQueue();
 
-        std::cerr << fmt::format("Message length {} not equal {}.", response.size(), bytesToRead) << std::endl;
-
         return;
     }
 
@@ -198,8 +185,6 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
                                                 std::istreambuf_iterator<char>()};
 
     const auto message = MessageSerializer().deserialize(data);
-
-    std::cout << fmt::format("Received message {} which has {} bytes.", toString(message.id), bytesToRead) << std::endl;
 
     switch (message.id)
     {
@@ -226,9 +211,6 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
 
                            return;
                        }
-
-                       std::cout << "Sent interested message to " << socket.remote_endpoint()
-                                 << ", bytes transferred: " << bytesTransferred << std::endl;
                    });
 
         break;
@@ -294,12 +276,6 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
 
                            return;
                        }
-
-                       std::cout << "Sent request message to " << socket.remote_endpoint()
-                                 << fmt::format(
-                                        " to download piece {}, beginning {}, bytes to read {}.\nBytes transferred: {}",
-                                        *pieceIndex, pieceBytesRead, maxBlockSize, bytes)
-                                 << std::endl;
                    });
         break;
     }
@@ -319,17 +295,30 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
 
         const auto blockNumber = common::bytes::BytesConverter::bytesToInt(message.payload.substr(4, 4));
 
-        std::cout << fmt::format("Downloaded {} part of the piece {}. Downloaded {} of {} bytes.", blockNumber,
-                                 *pieceIndex, pieceBytesRead, pieceSize)
-                  << std::endl;
+        pieceData += message.payload.substr(8, message.payload.size() - 8);
 
-        if (pieceBytesRead >= pieceSize)
+        if (pieceBytesRead >= torrentFileInfo->pieceLength)
         {
-            std::cout << "Piece " << blockPieceIndex << " downloaded" << std::endl;
+
+            std::cout << "Piece " << blockPieceIndex << " downloaded from " << socket.remote_endpoint() << std::endl;
 
             auto numberOfPiecesIndexes = static_cast<int>(piecesQueue.size());
 
             auto piecesIndexIter = 0;
+
+            if (HashValidator::compareHashWithData(torrentFileInfo->piecesHashes[blockPieceIndex], pieceData))
+            {
+                // TODO: save piece to file
+            }
+            else
+            {
+                returnPieceToQueue();
+
+                std::cerr << "Piece " << blockPieceIndex << " hash not valid, push this index to queue again!"
+                          << std::endl;
+            }
+
+            pieceData.clear();
 
             for (; piecesIndexIter < numberOfPiecesIndexes; ++piecesIndexIter)
             {
@@ -364,12 +353,11 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
             }
 
             pieceBytesRead = 0;
-
-            std::cout << "Start downloading piece " << *pieceIndex << std::endl;
         }
 
-        const auto byteToRequest =
-            (pieceSize - pieceBytesRead < maxBlockSize) ? pieceSize - pieceBytesRead : maxBlockSize;
+        const auto byteToRequest = (torrentFileInfo->pieceLength - pieceBytesRead < maxBlockSize) ?
+                                       torrentFileInfo->pieceLength - pieceBytesRead :
+                                       maxBlockSize;
 
         const auto requestMessage =
             Message{MessageId::Request, common::bytes::BytesConverter::intToBytes(*pieceIndex) +
@@ -391,12 +379,6 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
 
                            return;
                        }
-
-                       std::cout << "Sent request message to " << socket.remote_endpoint()
-                                 << fmt::format(
-                                        " to download piece {}, beginning {}, bytes to read {}.\nBytes transferred: {}",
-                                        *pieceIndex, pieceBytesRead, byteToRequest, bytes)
-                                 << std::endl;
                    });
 
         break;
@@ -422,6 +404,7 @@ void PeerToPeerSessionImpl::returnPieceToQueue()
     {
         piecesQueue.push(pieceIndex.value());
         pieceIndex = std::nullopt;
+        pieceData.clear();
     }
 }
 
