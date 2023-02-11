@@ -12,17 +12,18 @@ using namespace libs::fileSystem;
 namespace
 {
 const std::string testFilesDirectory{
-    fmt::format("{}src/libs/fileSystem/src/testFiles/", getProjectPath("torrent-client"))};
+    fmt::format("{}src/libs/fileSystem/src/testFiles", getProjectPath("torrent-client"))};
 const std::string textToWrite{"write method"};
-const std::string textToWriteAtPosition{"position data"};
+const std::basic_string<unsigned char> textToWriteAtPosition{reinterpret_cast<const unsigned char*>("position data")};
+const std::string textToWriteAtPositionAsString{"position data"};
 const std::string textToAppend{"append method"};
 const std::string textAfterWriteAndAppend{textToWrite + textToAppend};
 const std::string filenameForReading = "testReading.txt";
 const std::string filenameForWriting = "testWriting.txt";
 const std::string filenameForWritingAtPosition = "testWritingAtPosition.txt";
-const std::string pathForReading{testFilesDirectory + filenameForReading};
-const std::string pathForWriting{testFilesDirectory + filenameForWriting};
-const std::string pathForWritingAtPosition{testFilesDirectory + filenameForWritingAtPosition};
+const std::string pathForReading{fmt::format("{}/{}", testFilesDirectory, filenameForReading)};
+const std::string pathForWriting{fmt::format("{}/{}", testFilesDirectory, filenameForWriting)};
+const std::string pathForWritingAtPosition{fmt::format("{}/{}", testFilesDirectory, filenameForWritingAtPosition)};
 const std::string exampleContent{"example data\n"};
 const std::string incorrectPath = "433\\UTzxxxx/fi123xtF";
 }
@@ -45,7 +46,7 @@ TEST_F(FileSystemServiceImplTest, givenCorrectPath_shouldWriteToFile)
 TEST_F(FileSystemServiceImplTest, givenIncorrectPath_shouldThrowFileNotFoundForWritingAppendingAndReading)
 {
     ASSERT_THROW(fileSystemService.write(incorrectPath, textToWrite), errors::FileNotFound);
-    ASSERT_THROW(fileSystemService.writeAtPosition(incorrectPath, textToWrite, 0), errors::FileNotFound);
+    ASSERT_THROW(fileSystemService.writeAtPosition(incorrectPath, textToWriteAtPosition, 0), errors::FileNotFound);
     ASSERT_THROW(fileSystemService.append(incorrectPath, textToWrite), errors::FileNotFound);
     ASSERT_THROW(fileSystemService.read(incorrectPath), errors::FileNotFound);
 }
@@ -75,6 +76,20 @@ TEST_F(FileSystemServiceImplTest, givenCorrectPath_shouldWriteToFileAtPosition)
     const auto actualFileContent = fileSystemService.read(pathForWritingAtPosition);
 
     ASSERT_EQ(actualFileContent.size(), 43);
-    ASSERT_EQ(actualFileContent.substr(5, textToWriteAtPosition.size()), textToWriteAtPosition);
-    ASSERT_EQ(actualFileContent.substr(30, textToWriteAtPosition.size()), textToWriteAtPosition);
+    ASSERT_EQ(actualFileContent.substr(5, textToWriteAtPosition.size()), textToWriteAtPositionAsString);
+    ASSERT_EQ(actualFileContent.substr(30, textToWriteAtPosition.size()), textToWriteAtPositionAsString);
+}
+
+TEST_F(FileSystemServiceImplTest, givenFilePath_shouldReturnParentDirectory)
+{
+    const auto parentDirectory = fileSystemService.getParentDirectory(pathForReading);
+
+    ASSERT_EQ(parentDirectory, testFilesDirectory);
+}
+
+TEST_F(FileSystemServiceImplTest, givenFilePath_shouldReturnFileName)
+{
+    const auto fileName = fileSystemService.getFileName(pathForReading);
+
+    ASSERT_EQ(fileName, filenameForReading);
 }

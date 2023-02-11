@@ -22,8 +22,8 @@ void FileSystemServiceImpl::write(const std::string& absolutePath, const std::st
     fileStream << content;
 }
 
-void FileSystemServiceImpl::writeAtPosition(const std::string& absolutePath, const std::string& data,
-                                            unsigned int position) const
+void FileSystemServiceImpl::writeAtPosition(const std::string& absolutePath,
+                                            const std::basic_string<unsigned char>& data, unsigned int position) const
 {
     if (not exists(absolutePath))
     {
@@ -39,7 +39,7 @@ void FileSystemServiceImpl::writeAtPosition(const std::string& absolutePath, con
 
     fileStream.seekp(position, std::ios::beg);
 
-    fileStream.write(data.c_str(), static_cast<long>(data.size()));
+    fileStream.write(reinterpret_cast<const char*>(data.c_str()), static_cast<long>(data.size()));
 }
 
 void FileSystemServiceImpl::append(const std::string& absolutePath, const std::string& content) const
@@ -73,6 +73,21 @@ std::string FileSystemServiceImpl::read(const std::string& absolutePath) const
 bool FileSystemServiceImpl::exists(const std::string& absolutePath) const
 {
     return std::filesystem::exists(absolutePath);
+}
+
+std::string FileSystemServiceImpl::getParentDirectory(const std::string& absolutePath) const
+{
+    return std::filesystem::path{absolutePath}.parent_path();
+}
+
+std::string FileSystemServiceImpl::getFileName(const std::string& absolutePath) const
+{
+    return std::filesystem::path{absolutePath}.filename();
+}
+
+void FileSystemServiceImpl::remove(const std::string& absolutePath) const
+{
+    std::filesystem::remove_all(absolutePath);
 }
 
 }

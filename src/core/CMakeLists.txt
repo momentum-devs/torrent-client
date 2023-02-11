@@ -6,6 +6,7 @@ set(SOURCES
         src/session/HandshakeMessageSerializer.cpp
         src/session/PeerToPeerSessionImpl.cpp
         src/session/MessageSerializer.cpp
+        src/session/PieceRepositoryImpl.cpp
         src/client/TorrentClient.cpp
         )
 
@@ -15,6 +16,7 @@ set(UT_SOURCES
         src/tracker/AnnounceResponseDeserializerImplTest.cpp
         src/session/HandshakeMessageSerializerTest.cpp
         src/session/MessageSerializerTest.cpp
+        src/session/PieceRepositoryImplTest.cpp
         )
 
 add_library(core ${SOURCES})
