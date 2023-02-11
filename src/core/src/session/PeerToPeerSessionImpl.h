@@ -21,6 +21,9 @@ private:
     void onReadMessageLength(boost::system::error_code error, std::size_t bytesTransferred);
     void onReadMessage(boost::system::error_code error, std::size_t bytesTransferred, std::size_t bytesToRead);
     void returnPieceToQueue();
+    void asyncRead(std::size_t bytesToRead, std::function<void(boost::system::error_code, std::size_t)> readHandler);
+    void asyncWrite(boost::asio::const_buffer writeBuffer,
+                    std::function<void(boost::system::error_code, std::size_t)> writeHandler);
 
     boost::asio::ip::tcp::socket socket;
     std::string request;
@@ -29,6 +32,7 @@ private:
     PeerEndpoint peerEndpoint;
     const std::string peerId;
     bool isChoked;
+    bool hasErrorOccurred;
     std::optional<int> pieceIndex;
     int pieceSize;
     int pieceBytesRead;
