@@ -25,11 +25,6 @@ void FileSystemServiceImpl::write(const std::string& absolutePath, const std::st
 void FileSystemServiceImpl::writeAtPosition(const std::string& absolutePath,
                                             const std::basic_string<unsigned char>& data, unsigned int position) const
 {
-    if (not exists(absolutePath))
-    {
-        std::ofstream{absolutePath};
-    }
-
     std::ofstream fileStream{absolutePath, std::ios::binary | std::ios::in | std::ios::out};
 
     if (!fileStream.is_open())

@@ -19,13 +19,25 @@ const std::string serializedPiecesIds{"[10,21,33]"};
 const std::string serializedUpdatedPiecesIds{"[10,21,33, 15]"};
 }
 
-class PieceRepositoryImplTest : public Test
+class PieceRepositoryImplTest_Base : public Test
 {
 public:
+    PieceRepositoryImplTest_Base()
+    {
+        EXPECT_CALL(*fileSystemService, exists(dataFilePath)).WillOnce(Return(false));
+        EXPECT_CALL(*fileSystemService, write(dataFilePath, ""));
+        EXPECT_CALL(*fileSystemService, exists(metaDataFilePath)).WillOnce(Return(false));
+        EXPECT_CALL(*fileSystemService, write(metaDataFilePath, "[]"));
+    }
+
     std::shared_ptr<libs::fileSystem::FileSystemServiceMock> fileSystemService =
         std::make_shared<StrictMock<libs::fileSystem::FileSystemServiceMock>>();
     std::shared_ptr<PiecesSerializerMock> serializer = std::make_shared<StrictMock<PiecesSerializerMock>>();
+};
 
+class PieceRepositoryImplTest : public PieceRepositoryImplTest_Base
+{
+public:
     PieceRepositoryImpl repository{fileSystemService, serializer, pieceSize, dataFilePath, metaDataFilePath};
 };
 

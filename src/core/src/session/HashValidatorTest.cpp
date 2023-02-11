@@ -40,7 +40,7 @@ TEST(HashValidatorTest, compareTwoHashes_leftEncoded)
 
     data2Hash.process(data2);
 
-    ASSERT_TRUE(HashValidator::compareHashes(common::encoder::HexEncoder::encode(static_cast<std::string>(data1Hash)),
+    ASSERT_TRUE(HashValidator::compareHashes(libs::encoder::HexEncoder::encode(static_cast<std::string>(data1Hash)),
                                              static_cast<std::string>(data2Hash)));
 }
 
@@ -59,7 +59,7 @@ TEST(HashValidatorTest, compareTwoHashes_rightEncoded)
     data2Hash.process(data2);
 
     ASSERT_TRUE(HashValidator::compareHashes(static_cast<std::string>(data1Hash),
-                                             common::encoder::HexEncoder::encode(static_cast<std::string>(data2Hash))));
+                                             libs::encoder::HexEncoder::encode(static_cast<std::string>(data2Hash))));
 }
 
 TEST(HashValidatorTest, compareTwoHashes_bothEncoded)
@@ -76,8 +76,8 @@ TEST(HashValidatorTest, compareTwoHashes_bothEncoded)
 
     data2Hash.process(data2);
 
-    ASSERT_TRUE(HashValidator::compareHashes(common::encoder::HexEncoder::encode(static_cast<std::string>(data1Hash)),
-                                             common::encoder::HexEncoder::encode(static_cast<std::string>(data2Hash))));
+    ASSERT_TRUE(HashValidator::compareHashes(libs::encoder::HexEncoder::encode(static_cast<std::string>(data1Hash)),
+                                             libs::encoder::HexEncoder::encode(static_cast<std::string>(data2Hash))));
 }
 
 TEST(HashValidatorTest, compareTwoDifferentHashes_nonEncoded)
@@ -112,7 +112,7 @@ TEST(HashValidatorTest, compareTwoDifferentHashes_leftEncoded)
 
     data2Hash.process(data2);
 
-    ASSERT_FALSE(HashValidator::compareHashes(common::encoder::HexEncoder::encode(static_cast<std::string>(data1Hash)),
+    ASSERT_FALSE(HashValidator::compareHashes(libs::encoder::HexEncoder::encode(static_cast<std::string>(data1Hash)),
                                               static_cast<std::string>(data2Hash)));
 }
 
@@ -130,8 +130,8 @@ TEST(HashValidatorTest, compareTwoDifferentHashes_rightEncoded)
 
     data2Hash.process(data2);
 
-    ASSERT_FALSE(HashValidator::compareHashes(
-        static_cast<std::string>(data1Hash), common::encoder::HexEncoder::encode(static_cast<std::string>(data2Hash))));
+    ASSERT_FALSE(HashValidator::compareHashes(static_cast<std::string>(data1Hash),
+                                              libs::encoder::HexEncoder::encode(static_cast<std::string>(data2Hash))));
 }
 
 TEST(HashValidatorTest, compareTwoDifferentHashes_bothEncoded)
@@ -148,9 +148,8 @@ TEST(HashValidatorTest, compareTwoDifferentHashes_bothEncoded)
 
     data2Hash.process(data2);
 
-    ASSERT_FALSE(
-        HashValidator::compareHashes(common::encoder::HexEncoder::encode(static_cast<std::string>(data1Hash)),
-                                     common::encoder::HexEncoder::encode(static_cast<std::string>(data2Hash))));
+    ASSERT_FALSE(HashValidator::compareHashes(libs::encoder::HexEncoder::encode(static_cast<std::string>(data1Hash)),
+                                              libs::encoder::HexEncoder::encode(static_cast<std::string>(data2Hash))));
 }
 
 TEST(HashValidatorTest, compareHashWithData)

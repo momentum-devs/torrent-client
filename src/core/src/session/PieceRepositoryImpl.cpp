@@ -14,6 +14,15 @@ PieceRepositoryImpl::PieceRepositoryImpl(std::shared_ptr<libs::fileSystem::FileS
       absoluteDataFilePath{absoluteDataFilePathInit},
       absoluteMetadataFilePath{absoluteMetadataFilePathInit}
 {
+    if (not fileSystemService->exists(absoluteDataFilePath))
+    {
+        fileSystemService->write(absoluteDataFilePath, "");
+    }
+
+    if (not fileSystemService->exists(absoluteMetadataFilePath))
+    {
+        fileSystemService->write(absoluteMetadataFilePath, "[]");
+    }
 }
 
 void PieceRepositoryImpl::save(unsigned int pieceId, const std::basic_string<unsigned char>& data)

@@ -46,7 +46,7 @@ TEST_F(PiecesSerializerImplTest, givenSerializedPiecesIdsJson_shouldReturnPieces
     EXPECT_EQ(actualPiecesIds, piecesIds);
 }
 
-TEST_F(PiecesSerializerImplTest, givenEmptyJsonshouldReturnEmptyPiecesIds)
+TEST_F(PiecesSerializerImplTest, givenEmptyJson_shouldReturnEmptyPiecesIds)
 {
     const auto actualStatistics = serializer.deserialize("[]");
 
