@@ -4,7 +4,7 @@
 
 namespace core
 {
-PeersRetrieverImpl::PeersRetrieverImpl(std::unique_ptr<common::httpClient::HttpClient> httpClientInit,
+PeersRetrieverImpl::PeersRetrieverImpl(std::unique_ptr<libs::httpClient::HttpClient> httpClientInit,
                                        std::unique_ptr<AnnounceResponseDeserializer> responseDeserializerInit)
     : httpClient{std::move(httpClientInit)}, responseDeserializer{std::move(responseDeserializerInit)}
 {
@@ -13,7 +13,7 @@ PeersRetrieverImpl::PeersRetrieverImpl(std::unique_ptr<common::httpClient::HttpC
 RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPayload& payload)
 {
     const auto queryParameters =
-        std::map<std::string, std::string>{{"info_hash", common::encoder::HexEncoder::decode(payload.infoHash)},
+        std::map<std::string, std::string>{{"info_hash", libs::encoder::HexEncoder::decode(payload.infoHash)},
                                            {"peer_id", payload.peerId},
                                            {"port", payload.port},
                                            {"uploaded", payload.uploaded},

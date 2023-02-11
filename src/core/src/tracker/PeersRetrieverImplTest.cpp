@@ -22,16 +22,16 @@ const auto downloaded = "0";
 const auto left = "399507456";
 const auto compact = "1";
 const auto queryParameters =
-    std::map<std::string, std::string>{{"info_hash", common::encoder::HexEncoder::decode(infoHash)},
+    std::map<std::string, std::string>{{"info_hash", libs::encoder::HexEncoder::decode(infoHash)},
                                        {"peer_id", peerId},
                                        {"port", port},
                                        {"uploaded", uploaded},
                                        {"downloaded", downloaded},
                                        {"left", left},
                                        {"compact", compact}};
-const auto httpGetPayload = common::httpClient::HttpGetRequestPayload{announceUrl, std::nullopt, queryParameters};
+const auto httpGetPayload = libs::httpClient::HttpGetRequestPayload{announceUrl, std::nullopt, queryParameters};
 const auto responseBody = "body";
-const auto httpGetResponse = common::httpClient::HttpResponse{200, responseBody};
+const auto httpGetResponse = libs::httpClient::HttpResponse{200, responseBody};
 const auto peersEndpoints = std::vector<PeerEndpoint>{{"address", 112}};
 const auto deserializedResponse = RetrievePeersResponse{900, peersEndpoints};
 }
@@ -39,9 +39,9 @@ const auto deserializedResponse = RetrievePeersResponse{900, peersEndpoints};
 class PeerRetrieverImplTest : public Test
 {
 public:
-    std::unique_ptr<common::httpClient::HttpClientMock> httpClientMockInit =
-        std::make_unique<common::httpClient::HttpClientMock>();
-    common::httpClient::HttpClientMock* httpClientMock = httpClientMockInit.get();
+    std::unique_ptr<libs::httpClient::HttpClientMock> httpClientMockInit =
+        std::make_unique<libs::httpClient::HttpClientMock>();
+    libs::httpClient::HttpClientMock* httpClientMock = httpClientMockInit.get();
 
     std::unique_ptr<AnnounceResponseDeserializerMock> responseDeserializerMockInit =
         std::make_unique<AnnounceResponseDeserializerMock>();

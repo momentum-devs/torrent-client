@@ -11,7 +11,7 @@ namespace core
 class PeerToPeerSessionImpl : public PeerToPeerSession
 {
 public:
-    PeerToPeerSessionImpl(boost::asio::io_context& ioContext, common::collection::ThreadSafeQueue<int>&,
+    PeerToPeerSessionImpl(boost::asio::io_context& ioContext, libs::collection::ThreadSafeQueue<int>&,
                           const PeerEndpoint& peerEndpoint, const std::string& peerId, int pieceSize);
     void startSession(const std::string& infoHash) override;
 
@@ -25,7 +25,7 @@ private:
     boost::asio::ip::tcp::socket socket;
     std::string request;
     boost::asio::streambuf response;
-    common::collection::ThreadSafeQueue<int>& piecesQueue;
+    libs::collection::ThreadSafeQueue<int>& piecesQueue;
     PeerEndpoint peerEndpoint;
     const std::string peerId;
     bool isChoked;
@@ -33,6 +33,6 @@ private:
     int pieceSize;
     int pieceBytesRead;
     int maxBlockSize;
-    std::optional<common::bytes::Bitfield> bitfield;
+    std::optional<libs::bytes::Bitfield> bitfield;
 };
 }

@@ -12,9 +12,9 @@ using namespace core;
 
 namespace
 {
-std::unique_ptr<common::fileSystem::FileSystemService> fileSystemService =
-    common::fileSystem::FileSystemServiceFactory().createFileSystemService();
-const auto projectPath = common::fileSystem::getProjectPath("torrent-client");
+std::unique_ptr<libs::fileSystem::FileSystemService> fileSystemService =
+    libs::fileSystem::FileSystemServiceFactory().createFileSystemService();
+const auto projectPath = libs::fileSystem::getProjectPath("torrent-client");
 const auto testFileDirectoryPath = projectPath + "src/core/src/torrentFile/testFiles/";
 const auto validTorrentFilePath = testFileDirectoryPath + "valid.torrent";
 const auto torrentFileWithoutAnnounceFieldPath = testFileDirectoryPath + "fileWithoutAnnounceField.torrent";

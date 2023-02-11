@@ -75,7 +75,7 @@ std::vector<std::string> TorrentFileDeserializerImpl::getPiecesHashes(bencode::d
     {
         std::string pieceHashBytes{piecesFieldValue.begin() + i, piecesFieldValue.begin() + i + 20};
 
-        std::string pieceHashHexEncoded = common::encoder::HexEncoder::encode(pieceHashBytes);
+        std::string pieceHashHexEncoded = libs::encoder::HexEncoder::encode(pieceHashBytes);
 
         piecesHashesHexEncoded.push_back(pieceHashHexEncoded);
     }

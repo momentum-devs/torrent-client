@@ -15,18 +15,18 @@ namespace core
 class TorrentClient
 {
 public:
-    TorrentClient(std::unique_ptr<common::fileSystem::FileSystemService> fileSystemService,
+    TorrentClient(std::unique_ptr<libs::fileSystem::FileSystemService> fileSystemService,
                   std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializer,
-                  std::unique_ptr<common::httpClient::HttpClient> httpClient,
+                  std::unique_ptr<libs::httpClient::HttpClient> httpClient,
                   std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer,
                   std::unique_ptr<PeersRetriever> peerRetriever);
 
     void download(const std::string& torrentFilePath);
 
 private:
-    std::unique_ptr<common::fileSystem::FileSystemService> fileSystemService;
+    std::unique_ptr<libs::fileSystem::FileSystemService> fileSystemService;
     std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializer;
-    std::unique_ptr<common::httpClient::HttpClient> httpClient;
+    std::unique_ptr<libs::httpClient::HttpClient> httpClient;
     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer;
     std::unique_ptr<PeersRetriever> peerRetriever;
 };

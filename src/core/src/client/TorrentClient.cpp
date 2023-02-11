@@ -11,9 +11,9 @@
 
 namespace core
 {
-TorrentClient::TorrentClient(std::unique_ptr<common::fileSystem::FileSystemService> fileSystemServiceInit,
+TorrentClient::TorrentClient(std::unique_ptr<libs::fileSystem::FileSystemService> fileSystemServiceInit,
                              std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializerInit,
-                             std::unique_ptr<common::httpClient::HttpClient> httpClientInit,
+                             std::unique_ptr<libs::httpClient::HttpClient> httpClientInit,
                              std::unique_ptr<AnnounceResponseDeserializer> responseDeserializerInit,
                              std::unique_ptr<PeersRetriever> peerRetrieverInit)
     : fileSystemService{std::move(fileSystemServiceInit)},
@@ -40,7 +40,7 @@ void TorrentClient::download(const std::string& torrentFilePath)
 
     std::iota(iotaData.begin(), iotaData.end(), 0);
 
-    auto piecesQueue = common::collection::ThreadSafeQueue{iotaData};
+    auto piecesQueue = libs::collection::ThreadSafeQueue{iotaData};
 
     const auto peerId = PeerIdGenerator::generate();
 

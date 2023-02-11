@@ -34,14 +34,14 @@ int main(int argc, char* argv[])
 
     auto torrentFilePath = variablesMap["torrent_file"].as<std::string>();
 
-    std::unique_ptr<common::fileSystem::FileSystemService> fileSystemService =
-        common::fileSystem::FileSystemServiceFactory().createFileSystemService();
+    std::unique_ptr<libs::fileSystem::FileSystemService> fileSystemService =
+        libs::fileSystem::FileSystemServiceFactory().createFileSystemService();
 
     std::unique_ptr<core::TorrentFileDeserializer> torrentFileDeserializer =
         std::make_unique<core::TorrentFileDeserializerImpl>();
 
-    std::unique_ptr<common::httpClient::HttpClient> httpClient =
-        common::httpClient::HttpClientFactory().createHttpClient();
+    std::unique_ptr<libs::httpClient::HttpClient> httpClient =
+        libs::httpClient::HttpClientFactory().createHttpClient();
 
     std::unique_ptr<core::AnnounceResponseDeserializer> responseDeserializer =
         std::make_unique<core::AnnounceResponseDeserializerImpl>();

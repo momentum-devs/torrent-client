@@ -18,7 +18,7 @@ using iterator = boost::asio::buffers_iterator<boost::asio::streambuf::const_buf
 namespace core
 {
 PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
-                                             common::collection::ThreadSafeQueue<int>& piecesQueueInit,
+                                             libs::collection::ThreadSafeQueue<int>& piecesQueueInit,
                                              const PeerEndpoint& peerEndpointInit, const std::string& peerIdInit,
                                              int pieceSizeInit)
     : socket(ioContext),
@@ -91,7 +91,7 @@ void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error, std
 
     const std::string data{std::istreambuf_iterator<char>(&response), std::istreambuf_iterator<char>()};
 
-    const auto receivedInfoHash = common::encoder::HexEncoder::encode(data.substr(28, 20));
+    const auto receivedInfoHash = libs::encoder::HexEncoder::encode(data.substr(28, 20));
 
     if (infoHash != receivedInfoHash)
     {
@@ -142,7 +142,7 @@ void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error,
     const std::basic_string<unsigned char> bytes{std::istreambuf_iterator<char>(&response),
                                                  std::istreambuf_iterator<char>()};
 
-    const auto bytesToRead = common::bytes::BytesConverter::bytesToInt(bytes);
+    const auto bytesToRead = libs::bytes::BytesConverter::bytesToInt(bytes);
 
     std::cout << fmt::format("{} bytes should be read from payload data.", bytesToRead) << std::endl;
 
@@ -193,7 +193,7 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
     {
         const auto bitfieldData = data.substr(5);
 
-        bitfield.emplace(common::bytes::Bitfield{bitfieldData});
+        bitfield.emplace(libs::bytes::Bitfield{bitfieldData});
 
         const auto interestedMessage = Message{MessageId::Interested, std::basic_string<unsigned char>{}};
 
@@ -259,9 +259,9 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
         }
 
         const auto requestMessage =
-            Message{MessageId::Request, common::bytes::BytesConverter::intToBytes(*pieceIndex) +
-                                            common::bytes::BytesConverter::intToBytes(pieceBytesRead) +
-                                            common::bytes::BytesConverter::intToBytes(maxBlockSize)};
+            Message{MessageId::Request, libs::bytes::BytesConverter::intToBytes(*pieceIndex) +
+                                            libs::bytes::BytesConverter::intToBytes(pieceBytesRead) +
+                                            libs::bytes::BytesConverter::intToBytes(maxBlockSize)};
 
         const auto serializedRequestMessage = MessageSerializer().serialize(requestMessage);
 
@@ -298,9 +298,9 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
     {
         pieceBytesRead += maxBlockSize;
 
-        const auto blockPieceIndex = common::bytes::BytesConverter::bytesToInt(message.payload.substr(0, 4));
+        const auto blockPieceIndex = libs::bytes::BytesConverter::bytesToInt(message.payload.substr(0, 4));
 
-        const auto blockNumber = common::bytes::BytesConverter::bytesToInt(message.payload.substr(4, 4));
+        const auto blockNumber = libs::bytes::BytesConverter::bytesToInt(message.payload.substr(4, 4));
 
         std::cout << fmt::format("Downloaded {} part of the piece {}. Downloaded {} of {} bytes.", blockNumber,
                                  *pieceIndex, pieceBytesRead, pieceSize)
@@ -351,9 +351,9 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
             (pieceSize - pieceBytesRead < maxBlockSize) ? pieceSize - pieceBytesRead : maxBlockSize;
 
         const auto requestMessage =
-            Message{MessageId::Request, common::bytes::BytesConverter::intToBytes(*pieceIndex) +
-                                            common::bytes::BytesConverter::intToBytes(pieceBytesRead) +
-                                            common::bytes::BytesConverter::intToBytes(byteToRequest)};
+            Message{MessageId::Request, libs::bytes::BytesConverter::intToBytes(*pieceIndex) +
+                                            libs::bytes::BytesConverter::intToBytes(pieceBytesRead) +
+                                            libs::bytes::BytesConverter::intToBytes(byteToRequest)};
 
         const auto serializedRequestMessage = MessageSerializer().serialize(requestMessage);
 
@@ -381,7 +381,7 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
     }
     case MessageId::Have:
     {
-        const auto newPieceIndex = common::bytes::BytesConverter::bytesToInt(message.payload);
+        const auto newPieceIndex = libs::bytes::BytesConverter::bytesToInt(message.payload);
 
         bitfield->setBit(newPieceIndex);
 

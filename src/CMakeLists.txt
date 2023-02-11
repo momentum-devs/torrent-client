@@ -1,4 +1,4 @@
-add_subdirectory(common)
+add_subdirectory(libs)
 add_subdirectory(core)
 
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)

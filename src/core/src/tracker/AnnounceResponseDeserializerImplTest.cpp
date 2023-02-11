@@ -6,12 +6,12 @@
 #include "fileSystem/GetProjectPath.h"
 
 using namespace ::testing;
-using namespace common::fileSystem;
+using namespace libs::fileSystem;
 using namespace core;
 
 namespace
 {
-std::unique_ptr<common::fileSystem::FileSystemService> fileSystemService =
+std::unique_ptr<libs::fileSystem::FileSystemService> fileSystemService =
     FileSystemServiceFactory().createFileSystemService();
 const auto projectPath = getProjectPath("torrent-client");
 const auto testFileDirectoryPath = projectPath + "src/core/src/torrentFile/testFiles/";
