@@ -6,12 +6,14 @@
 
 #include "../session/HandshakeMessage.h"
 #include "../session/PeerToPeerSessionImpl.h"
+#include "../session/PieceRepositoryImpl.h"
+#include "../session/PiecesSerializerImpl.h"
 #include "collection/ThreadSafeQueue.h"
 #include "PeerIdGenerator.h"
 
 namespace core
 {
-TorrentClient::TorrentClient(std::unique_ptr<libs::fileSystem::FileSystemService> fileSystemServiceInit,
+TorrentClient::TorrentClient(std::shared_ptr<libs::fileSystem::FileSystemService> fileSystemServiceInit,
                              std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializerInit,
                              std::unique_ptr<libs::httpClient::HttpClient> httpClientInit,
                              std::unique_ptr<AnnounceResponseDeserializer> responseDeserializerInit,
@@ -24,7 +26,7 @@ TorrentClient::TorrentClient(std::unique_ptr<libs::fileSystem::FileSystemService
 {
 }
 
-void TorrentClient::download(const std::string& torrentFilePath)
+void TorrentClient::download(const std::string& torrentFilePath, const std::string& destinationDirectory)
 {
     srand(time(NULL));
 
@@ -60,14 +62,23 @@ void TorrentClient::download(const std::string& torrentFilePath)
 
     std::cout << fmt::format("Got list of {} peers.", response.peersEndpoints.size()) << std::endl;
 
+    std::shared_ptr<core::PiecesSerializer> piecesSerializer = std::make_shared<core::PiecesSerializerImpl>();
+
+    const auto outputFilePath = fmt::format("{}/{}", destinationDirectory, torrentFileInfo->fileName);
+
+    const auto metadataFilePath = fmt::format("{}/.{}.metadata", destinationDirectory, torrentFileInfo->fileName);
+
+    std::shared_ptr<core::PieceRepository> pieceRepository = std::make_shared<core::PieceRepositoryImpl>(
+        fileSystemService, piecesSerializer, torrentFileInfo->pieceLength, outputFilePath, metadataFilePath);
+
     boost::asio::io_context context;
 
     std::vector<std::unique_ptr<PeerToPeerSession>> sessions;
 
     for (const auto& peerEndpoint : response.peersEndpoints)
     {
-        sessions.push_back(
-            std::make_unique<PeerToPeerSessionImpl>(context, piecesQueue, peerEndpoint, peerId, torrentFileInfo));
+        sessions.push_back(std::make_unique<PeerToPeerSessionImpl>(context, piecesQueue, peerEndpoint, peerId,
+                                                                   torrentFileInfo, pieceRepository));
         sessions.back()->startSession();
     }
 

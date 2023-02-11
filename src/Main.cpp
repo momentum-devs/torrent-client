@@ -18,6 +18,9 @@ int main(int argc, char* argv[])
     description.add_options()("torrent_file, t", boost::program_options::value<std::string>(),
                               "path to torrent file to download");
 
+    description.add_options()("destination_directory, d", boost::program_options::value<std::string>(),
+                              "path to directory where file(s) will be saved");
+
     boost::program_options::variables_map variablesMap;
 
     auto parsedArguments = boost::program_options::parse_command_line(argc, argv, description);
@@ -28,20 +31,27 @@ int main(int argc, char* argv[])
 
     if (!variablesMap.count("torrent_file"))
     {
-        std::cout << "put argument: torrent_file, t - path to torrent file to download" << std::endl;
+        std::cerr << "put argument: torrent_file, t - path to torrent file to download" << std::endl;
+        return 0;
+    }
+
+    if (!variablesMap.count("destination_directory"))
+    {
+        std::cerr << "put argument: destination_directory, d - path to directory where file(s) will be saved"
+                  << std::endl;
         return 0;
     }
 
     auto torrentFilePath = variablesMap["torrent_file"].as<std::string>();
+    auto destinationDirectory = variablesMap["destination_directory"].as<std::string>();
 
-    std::unique_ptr<libs::fileSystem::FileSystemService> fileSystemService =
+    std::shared_ptr<libs::fileSystem::FileSystemService> fileSystemService =
         libs::fileSystem::FileSystemServiceFactory().createFileSystemService();
 
     std::unique_ptr<core::TorrentFileDeserializer> torrentFileDeserializer =
         std::make_unique<core::TorrentFileDeserializerImpl>();
 
-    std::unique_ptr<libs::httpClient::HttpClient> httpClient =
-        libs::httpClient::HttpClientFactory().createHttpClient();
+    std::unique_ptr<libs::httpClient::HttpClient> httpClient = libs::httpClient::HttpClientFactory().createHttpClient();
 
     std::unique_ptr<core::AnnounceResponseDeserializer> responseDeserializer =
         std::make_unique<core::AnnounceResponseDeserializerImpl>();
@@ -52,7 +62,7 @@ int main(int argc, char* argv[])
     core::TorrentClient torrentClient{std::move(fileSystemService), std::move(torrentFileDeserializer),
                                       std::move(httpClient), std::move(responseDeserializer), std::move(peerRetriever)};
 
-    torrentClient.download(torrentFilePath);
+    torrentClient.download(torrentFilePath, destinationDirectory);
 
     return 0;
 }

@@ -10,17 +10,13 @@
 #include "HashValidator.h"
 #include "MessageSerializer.h"
 
-namespace
-{
-using iterator = boost::asio::buffers_iterator<boost::asio::streambuf::const_buffers_type>;
-}
-
 namespace core
 {
 PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
                                              libs::collection::ThreadSafeQueue<int>& piecesQueueInit,
                                              const PeerEndpoint& peerEndpointInit, const std::string& peerIdInit,
-                                             const std::shared_ptr<TorrentFileInfo> torrentFileInfoInit)
+                                             const std::shared_ptr<TorrentFileInfo> torrentFileInfoInit,
+                                             const std::shared_ptr<PieceRepository> pieceRepositoryInit)
     : socket(ioContext),
       piecesQueue{piecesQueueInit},
       peerEndpoint{peerEndpointInit},
@@ -29,6 +25,7 @@ PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
       hasErrorOccurred{false},
       pieceIndex{std::nullopt},
       torrentFileInfo{torrentFileInfoInit},
+      pieceRepository{pieceRepositoryInit},
       pieceBytesRead{0},
       maxBlockSize{16384},
       bitfield{std::nullopt},
@@ -298,7 +295,6 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
 
         if (pieceBytesRead >= torrentFileInfo->pieceLength)
         {
-
             std::cout << "Piece " << blockPieceIndex << " downloaded from " << endpoint << std::endl;
 
             auto numberOfPiecesIndexes = static_cast<int>(piecesQueue.size());
@@ -307,7 +303,7 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
 
             if (HashValidator::compareHashWithData(torrentFileInfo->piecesHashes[blockPieceIndex], pieceData))
             {
-                // TODO: save piece to file
+                pieceRepository->save(blockPieceIndex, pieceData);
             }
             else
             {

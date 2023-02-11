@@ -6,6 +6,7 @@
 #include "collection/ThreadSafeQueue.h"
 #include "HandshakeMessage.h"
 #include "PeerToPeerSession.h"
+#include "PieceRepository.h"
 
 namespace core
 {
@@ -14,7 +15,9 @@ class PeerToPeerSessionImpl : public PeerToPeerSession
 public:
     PeerToPeerSessionImpl(boost::asio::io_context& ioContext, libs::collection::ThreadSafeQueue<int>&,
                           const PeerEndpoint& peerEndpoint, const std::string& peerId,
-                          const std::shared_ptr<TorrentFileInfo> torrentFileInfo);
+                          const std::shared_ptr<TorrentFileInfo> torrentFileInfo,
+                          const std::shared_ptr<PieceRepository> pieceRepository);
+
     void startSession() override;
 
 private:
@@ -37,6 +40,7 @@ private:
     bool hasErrorOccurred;
     std::optional<int> pieceIndex;
     const std::shared_ptr<TorrentFileInfo> torrentFileInfo;
+    const std::shared_ptr<PieceRepository> pieceRepository;
     int pieceBytesRead;
     int maxBlockSize;
     std::optional<libs::bytes::Bitfield> bitfield;
