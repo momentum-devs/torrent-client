@@ -1,9 +1,11 @@
 # torrent-client
 
-usage torrent-client --torrent_file <path_to_torrent_file_to_download>
+usage torrent-client --torrent_file <path_to_torrent_file> --destination_directory <path_to_download_directory>
 
 TODO:
 
-* Receive and store piece in file
-* Add multi peer communication
-* Proper handling of last piece in torrent which has different size
+* resolve all TODO in project
+* multi-file torrent handling
+* refactor peerToPeerSession
+* restore download progress
+* add timeout to session
