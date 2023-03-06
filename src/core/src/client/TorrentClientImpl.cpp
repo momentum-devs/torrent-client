@@ -42,9 +42,9 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     std::shared_ptr<core::PiecesSerializer> piecesSerializer = std::make_shared<core::PiecesSerializerImpl>();
 
-    const auto outputFilePath = fmt::format("{}/{}", destinationDirectory, torrentFileInfo->fileName);
+    const auto outputFilePath = fmt::format("{}/{}", destinationDirectory, torrentFileInfo->name);
 
-    const auto metadataFilePath = fmt::format("{}/.{}.metadata", destinationDirectory, torrentFileInfo->fileName);
+    const auto metadataFilePath = fmt::format("{}/.{}.metadata", destinationDirectory, torrentFileInfo->name);
 
     std::shared_ptr<core::PieceRepository> pieceRepository = std::make_shared<core::PieceRepositoryImpl>(
         fileSystemService, piecesSerializer, torrentFileInfo->pieceLength, outputFilePath, metadataFilePath);
@@ -82,15 +82,6 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
     const auto response = peerRetriever->retrievePeers(retrievePeersPayload);
 
     std::cout << fmt::format("Got list of {} peers.", response.peersEndpoints.size()) << std::endl;
-
-    std::shared_ptr<core::PiecesSerializer> piecesSerializer = std::make_shared<core::PiecesSerializerImpl>();
-
-    const auto outputFilePath = fmt::format("{}/{}", destinationDirectory, torrentFileInfo->name);
-
-    const auto metadataFilePath = fmt::format("{}/.{}.metadata", destinationDirectory, torrentFileInfo->name);
-
-    std::shared_ptr<core::PieceRepository> pieceRepository = std::make_shared<core::PieceRepositoryImpl>(
-        fileSystemService, piecesSerializer, torrentFileInfo->pieceLength, outputFilePath, metadataFilePath);
 
     boost::asio::io_context context;
 
