@@ -7,9 +7,10 @@ set(SOURCES
         src/session/PeerToPeerSessionImpl.cpp
         src/session/MessageSerializer.cpp
         src/session/PieceRepositoryImpl.cpp
-        src/client/TorrentClient.cpp
+        src/client/TorrentClientImpl.cpp
         src/session/PiecesSerializerImpl.cpp
         src/session/HashValidator.cpp
+        src/client/TorrentClientFactory.cpp
         )
 
 set(UT_SOURCES

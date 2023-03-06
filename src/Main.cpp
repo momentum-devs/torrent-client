@@ -1,14 +1,8 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 
-#include "core/include/TorrentClient.h"
 #include "core/src/client/PeerIdGenerator.h"
-#include "core/src/session/HandshakeMessageSerializer.h"
-#include "core/src/torrentFile/TorrentFileDeserializerImpl.h"
-#include "core/src/tracker/AnnounceResponseDeserializerImpl.h"
-#include "core/src/tracker/PeersRetrieverImpl.h"
-#include "fileSystem/FileSystemServiceFactory.h"
-#include "httpClient/HttpClientFactory.h"
+#include "TorrentClientFactory.h"
 
 int main(int argc, char* argv[])
 {
@@ -42,27 +36,13 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    auto torrentFilePath = variablesMap["torrent_file"].as<std::string>();
-    auto destinationDirectory = variablesMap["destination_directory"].as<std::string>();
+    const auto torrentFilePath = variablesMap["torrent_file"].as<std::string>();
 
-    std::shared_ptr<libs::fileSystem::FileSystemService> fileSystemService =
-        libs::fileSystem::FileSystemServiceFactory().createFileSystemService();
+    const auto destinationDirectory = variablesMap["destination_directory"].as<std::string>();
 
-    std::unique_ptr<core::TorrentFileDeserializer> torrentFileDeserializer =
-        std::make_unique<core::TorrentFileDeserializerImpl>();
+    const auto torrentClient = core::TorrentClientFactory::createTorrentClient();
 
-    std::unique_ptr<libs::httpClient::HttpClient> httpClient = libs::httpClient::HttpClientFactory().createHttpClient();
-
-    std::unique_ptr<core::AnnounceResponseDeserializer> responseDeserializer =
-        std::make_unique<core::AnnounceResponseDeserializerImpl>();
-
-    std::unique_ptr<core::PeersRetriever> peerRetriever =
-        std::make_unique<core::PeersRetrieverImpl>(std::move(httpClient), std::move(responseDeserializer));
-
-    core::TorrentClient torrentClient{std::move(fileSystemService), std::move(torrentFileDeserializer),
-                                      std::move(httpClient), std::move(responseDeserializer), std::move(peerRetriever)};
-
-    torrentClient.download(torrentFilePath, destinationDirectory);
+    torrentClient->download(torrentFilePath, destinationDirectory);
 
     return 0;
 }

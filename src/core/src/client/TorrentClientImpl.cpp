@@ -1,4 +1,4 @@
-#include "TorrentClient.h"
+#include "TorrentClientImpl.h"
 
 #include <numeric>
 
@@ -13,11 +13,11 @@
 
 namespace core
 {
-TorrentClient::TorrentClient(std::shared_ptr<libs::fileSystem::FileSystemService> fileSystemServiceInit,
-                             std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializerInit,
-                             std::unique_ptr<libs::httpClient::HttpClient> httpClientInit,
-                             std::unique_ptr<AnnounceResponseDeserializer> responseDeserializerInit,
-                             std::unique_ptr<PeersRetriever> peerRetrieverInit)
+TorrentClientImpl::TorrentClientImpl(std::shared_ptr<libs::fileSystem::FileSystemService> fileSystemServiceInit,
+                                     std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializerInit,
+                                     std::unique_ptr<libs::httpClient::HttpClient> httpClientInit,
+                                     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializerInit,
+                                     std::unique_ptr<PeersRetriever> peerRetrieverInit)
     : fileSystemService{std::move(fileSystemServiceInit)},
       torrentFileDeserializer{std::move(torrentFileDeserializerInit)},
       httpClient{std::move(httpClientInit)},
@@ -26,10 +26,8 @@ TorrentClient::TorrentClient(std::shared_ptr<libs::fileSystem::FileSystemService
 {
 }
 
-void TorrentClient::download(const std::string& torrentFilePath, const std::string& destinationDirectory)
+void TorrentClientImpl::download(const std::string& torrentFilePath, const std::string& destinationDirectory)
 {
-    srand(time(NULL));
-
     const auto torrentFileContent = fileSystemService->read(torrentFilePath);
 
     const auto torrentFileInfo =
@@ -84,11 +82,11 @@ void TorrentClient::download(const std::string& torrentFilePath, const std::stri
 
     std::vector<std::thread> threads;
 
-    const auto count = std::thread::hardware_concurrency() * 2;
+    const auto numberOfSupportedThreads = std::thread::hardware_concurrency() * 2;
 
-    threads.reserve(count);
+    threads.reserve(numberOfSupportedThreads);
 
-    for (unsigned int n = 0; n < count; ++n)
+    for (unsigned int n = 0; n < numberOfSupportedThreads; ++n)
     {
         threads.emplace_back([&] { context.run(); });
     }
