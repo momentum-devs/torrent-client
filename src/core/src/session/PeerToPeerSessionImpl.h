@@ -5,6 +5,7 @@
 #include "bytes/Bitfield.h"
 #include "collection/ThreadSafeQueue.h"
 #include "HandshakeMessage.h"
+#include "Message.h"
 #include "PeerToPeerSession.h"
 #include "PieceRepository.h"
 
@@ -25,6 +26,11 @@ private:
     void onReadHandshake(boost::system::error_code error);
     void onReadMessageLength(boost::system::error_code error, std::size_t bytesTransferred);
     void onReadMessage(boost::system::error_code error, std::size_t bytesTransferred, std::size_t bytesToRead);
+    void handleBitfieldMessage(const Message& bitfieldMessage);
+    void handleUnchokeMessage();
+    void handleChokeMessage();
+    void handlePieceMessage(const Message& pieceMessage);
+    void handleHaveMessage(const Message& haveMessage);
     void returnPieceToQueue();
     void asyncRead(std::size_t bytesToRead, std::function<void(boost::system::error_code, std::size_t)> readHandler);
     void asyncWrite(boost::asio::const_buffer writeBuffer,
@@ -43,11 +49,9 @@ private:
     const std::shared_ptr<TorrentFileInfo> torrentFileInfo;
     const std::shared_ptr<PieceRepository> pieceRepository;
     int pieceBytesRead;
-    int maxBlockSize;
     std::optional<libs::bytes::Bitfield> bitfield;
     std::basic_string<unsigned char> pieceData;
     boost::asio::ip::basic_endpoint<boost::asio::ip::tcp> endpoint;
-    const int timeout;
     boost::asio::deadline_timer deadline;
 };
 }
