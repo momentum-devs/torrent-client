@@ -3,7 +3,7 @@ add_subdirectory(core)
 
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
 
-add_executable(${PROJECT_NAME} Main.cpp)
+add_executable(${PROJECT_NAME} Main.cpp CommandLineArgumentParser.cpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
         core
