@@ -1,6 +1,7 @@
 #include "TorrentClientImpl.h"
 
 #include <numeric>
+#include <unordered_set>
 
 #include "fmt/format.h"
 
@@ -39,11 +40,33 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
                              torrentFileInfo->pieceLength)
               << std::endl;
 
+    std::shared_ptr<core::PiecesSerializer> piecesSerializer = std::make_shared<core::PiecesSerializerImpl>();
+
+    const auto outputFilePath = fmt::format("{}/{}", destinationDirectory, torrentFileInfo->fileName);
+
+    const auto metadataFilePath = fmt::format("{}/.{}.metadata", destinationDirectory, torrentFileInfo->fileName);
+
+    std::shared_ptr<core::PieceRepository> pieceRepository = std::make_shared<core::PieceRepositoryImpl>(
+        fileSystemService, piecesSerializer, torrentFileInfo->pieceLength, outputFilePath, metadataFilePath);
+
     std::vector<int> iotaData(numberOfPieces);
 
     std::iota(iotaData.begin(), iotaData.end(), 0);
 
-    auto piecesQueue = libs::collection::ThreadSafeQueue{iotaData};
+    std::set<int> piecesIds{iotaData.begin(), iotaData.end()};
+
+    auto downloadedPiecesIds = pieceRepository->findAllPiecesIds();
+
+    for (auto pieceId : downloadedPiecesIds)
+    {
+        piecesIds.erase(pieceId);
+    }
+
+    auto piecesQueue = libs::collection::ThreadSafeQueue{std::vector(piecesIds.begin(), piecesIds.end())};
+
+    std::cout << fmt::format("Already downloaded {} out of {} pieces, left {} pieces to download",
+                             downloadedPiecesIds.size(), numberOfPieces, piecesQueue.size())
+              << std::endl;
 
     const auto peerId = PeerIdGenerator::generate();
 
@@ -97,6 +120,15 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
         {
             thread.join();
         }
+    }
+
+    if (piecesQueue.empty())
+    {
+        std::cout << "Torrent downloaded successfully" << std::endl;
+    }
+    else
+    {
+        std::cout << "There left " << piecesQueue.size() << " pieces to download" << std::endl;
     }
 }
 }

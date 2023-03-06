@@ -29,6 +29,7 @@ private:
     void asyncRead(std::size_t bytesToRead, std::function<void(boost::system::error_code, std::size_t)> readHandler);
     void asyncWrite(boost::asio::const_buffer writeBuffer,
                     std::function<void(boost::system::error_code, std::size_t)> writeHandler);
+    void checkDeadline();
 
     boost::asio::ip::tcp::socket socket;
     std::string request;
@@ -46,5 +47,7 @@ private:
     std::optional<libs::bytes::Bitfield> bitfield;
     std::basic_string<unsigned char> pieceData;
     boost::asio::ip::basic_endpoint<boost::asio::ip::tcp> endpoint;
+    const int timeout;
+    boost::asio::deadline_timer deadline;
 };
 }
