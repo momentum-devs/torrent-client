@@ -11,6 +11,6 @@ class TorrentFileDeserializer
 public:
     virtual ~TorrentFileDeserializer() = default;
 
-    virtual TorrentFileInfo deserialize(const std::string&) = 0;
+    virtual TorrentFileInfo deserialize(const std::string&) const = 0;
 };
 }

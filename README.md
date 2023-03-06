@@ -4,7 +4,6 @@ usage torrent-client --torrent_file <path_to_torrent_file> --destination_directo
 
 TODO:
 
-* resolve all TODO in project
 * multi-file torrent handling
 * refactor peerToPeerSession
 * restore download progress

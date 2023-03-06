@@ -8,10 +8,10 @@ namespace core
 class TorrentFileDeserializerImpl : public TorrentFileDeserializer
 {
 public:
-    TorrentFileInfo deserialize(const std::string&) override;
+    TorrentFileInfo deserialize(const std::string&) const override;
 
 private:
-    std::string getInfoHash(bencode::dict&);
-    std::vector<std::string> getPiecesHashes(bencode::dict&);
+    std::string getInfoHash(const bencode::dict&) const;
+    std::vector<std::string> getPiecesHashes(const bencode::dict&) const;
 };
 }

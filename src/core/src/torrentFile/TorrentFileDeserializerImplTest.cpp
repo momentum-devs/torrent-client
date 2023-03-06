@@ -17,6 +17,7 @@ std::unique_ptr<libs::fileSystem::FileSystemService> fileSystemService =
 const auto projectPath = libs::fileSystem::getProjectPath("torrent-client");
 const auto testFileDirectoryPath = projectPath + "src/core/src/torrentFile/testFiles/";
 const auto validTorrentFilePath = testFileDirectoryPath + "valid.torrent";
+const auto validMultiFilesTorrentFilePath = testFileDirectoryPath + "validMultiFiles.torrent";
 const auto torrentFileWithoutAnnounceFieldPath = testFileDirectoryPath + "fileWithoutAnnounceField.torrent";
 const auto torrentFileWithoutInfoFieldPath = testFileDirectoryPath + "fileWithoutInfoField.torrent";
 const auto torrentFileWithoutLengthFieldPath = testFileDirectoryPath + "fileWithoutLengthField.torrent";
@@ -26,6 +27,7 @@ const auto torrentFileWithoutPiecesFieldPath = testFileDirectoryPath + "fileWith
 const auto invalidBencodeFilePath = testFileDirectoryPath + "invalidBencodeFile.torrent";
 
 const auto validTorrentFileContent = fileSystemService->read(validTorrentFilePath);
+const auto validMultiFilesTorrentFileContent = fileSystemService->read(validMultiFilesTorrentFilePath);
 const auto torrentFileWithoutAnnounceFieldContent = fileSystemService->read(torrentFileWithoutAnnounceFieldPath);
 const auto torrentFileWithoutInfoFieldContent = fileSystemService->read(torrentFileWithoutInfoFieldPath);
 const auto torrentFileWithoutLengthFieldContent = fileSystemService->read(torrentFileWithoutLengthFieldPath);
@@ -51,6 +53,22 @@ TEST_F(TorrentFileDeserializerImplTest, deserializeTorrentFile)
     ASSERT_EQ(torrentFileInfo.pieceLength, 262144);
     ASSERT_EQ(torrentFileInfo.piecesHashes[0], "3fbdf5be0c348bb673cca7eab8eb44f7a2c0f409");
     ASSERT_EQ(torrentFileInfo.piecesHashes.size(), 1524);
+    ASSERT_EQ(torrentFileInfo.nestedFilesInfo, std::nullopt);
+}
+
+TEST_F(TorrentFileDeserializerImplTest, deserializeMultiFileTorrentFile)
+{
+    const auto torrentFileInfo = torrentFileDeserializer.deserialize(validMultiFilesTorrentFileContent);
+
+    ASSERT_EQ(torrentFileInfo.announce, "udp://tracker.leechers-paradise.org:6969/announce");
+    ASSERT_EQ(torrentFileInfo.infoHash, "9e8cbe0fc04f2c6eced5896173bdedbeca846f4d");
+    ASSERT_EQ(torrentFileInfo.length, 10562409472);
+    ASSERT_EQ(torrentFileInfo.pieceLength, 1048576);
+    ASSERT_EQ(torrentFileInfo.piecesHashes[0], "0d61225476b4483667bb47cb9a631558cfe64ac0");
+    ASSERT_EQ(torrentFileInfo.piecesHashes.size(), 10074);
+    ASSERT_EQ(torrentFileInfo.nestedFilesInfo->size(), 13);
+    ASSERT_EQ(torrentFileInfo.nestedFilesInfo->at(0).name, "The Sopranos S01E09 Boca.mkv");
+    ASSERT_EQ(torrentFileInfo.nestedFilesInfo->at(0).length, 1031293069);
 }
 
 TEST_F(TorrentFileDeserializerImplTest, givenTorrentFileWithoutAnnounceField_throwsAnError)

@@ -18,41 +18,82 @@ bencode::data parseBencode(const std::string& bencodeText);
 bencode::dict getDictionary(const bencode::data& data);
 template <typename T>
 T getFieldValue(const bencode::dict& bencodeDictionary, const std::string& fieldName);
+template <typename T>
+std::optional<T> getFieldValueAsOptional(const bencode::dict& bencodeDictionary, const std::string& fieldName);
 template <>
 bencode::data getFieldValue<bencode::data>(const bencode::dict& bencodeDictionary, const std::string& fieldName);
 
 constexpr auto announceFieldName = "announce";
 constexpr auto infoFieldName = "info";
 constexpr auto nameFieldName = "name";
+constexpr auto nestedFilesFieldName = "files";
+constexpr auto nestedFileFieldName = "path";
 constexpr auto piecesFieldName = "pieces";
 constexpr auto pieceLengthFieldName = "piece length";
 constexpr auto lengthFieldName = "length";
 }
 
-TorrentFileInfo TorrentFileDeserializerImpl::deserialize(const std::string& torrentFileContent)
+TorrentFileInfo TorrentFileDeserializerImpl::deserialize(const std::string& torrentFileContent) const
 {
     const auto bencodeData = parseBencode(torrentFileContent);
 
-    auto bencodeDictionary = getDictionary(bencodeData);
+    const auto bencodeDictionary = getDictionary(bencodeData);
 
     const auto announce = getFieldValue<bencode::string>(bencodeDictionary, announceFieldName);
 
     const auto infoHash = getInfoHash(bencodeDictionary);
 
-    auto infoDictionary = getFieldValue<bencode::dict>(bencodeDictionary, infoFieldName);
-
-    const auto torrentSize = getFieldValue<bencode::integer>(infoDictionary, lengthFieldName);
+    const auto infoDictionary = getFieldValue<bencode::dict>(bencodeDictionary, infoFieldName);
 
     const auto piecesLength = getFieldValue<bencode::integer>(infoDictionary, pieceLengthFieldName);
 
     const auto fileName = getFieldValue<bencode::string>(infoDictionary, nameFieldName);
 
+    const auto nestedFilesList = getFieldValueAsOptional<bencode::list>(infoDictionary, nestedFilesFieldName);
+
+    std::vector<NestedFileInfo> nestedFilesInfo;
+
+    long long torrentSize = 0;
+
+    if (nestedFilesList && !nestedFilesList->empty())
+    {
+        for (const auto& nestedFileListEntry : *nestedFilesList)
+        {
+            const auto nestedFileDictionary = getDictionary(nestedFileListEntry);
+
+            const auto nestedFileNameList = getFieldValue<bencode::list>(nestedFileDictionary, nestedFileFieldName);
+
+            std::string nestedFileName;
+
+            for (const auto& nestedFileNameListEntry : nestedFileNameList)
+            {
+                nestedFileName += std::get<bencode::string>(nestedFileNameListEntry);
+            }
+
+            const auto nestedFileSize = getFieldValue<bencode::integer>(nestedFileDictionary, lengthFieldName);
+
+            nestedFilesInfo.push_back(NestedFileInfo{nestedFileName, nestedFileSize});
+
+            torrentSize += nestedFileSize;
+        }
+    }
+    else
+    {
+        torrentSize = getFieldValue<bencode::integer>(infoDictionary, lengthFieldName);
+    }
+
     const auto piecesHashes = getPiecesHashes(infoDictionary);
 
-    return {announce, infoHash, torrentSize, piecesLength, fileName, piecesHashes};
+    return {announce,
+            infoHash,
+            torrentSize,
+            piecesLength,
+            fileName,
+            piecesHashes,
+            nestedFilesInfo.empty() ? std::nullopt : std::optional<std::vector<NestedFileInfo>>(nestedFilesInfo)};
 }
 
-std::string TorrentFileDeserializerImpl::getInfoHash(bencode::dict& bencodeDictionary)
+std::string TorrentFileDeserializerImpl::getInfoHash(const bencode::dict& bencodeDictionary) const
 {
     const auto info = getFieldValue<bencode::data>(bencodeDictionary, infoFieldName);
 
@@ -65,7 +106,7 @@ std::string TorrentFileDeserializerImpl::getInfoHash(bencode::dict& bencodeDicti
     return infoHash;
 }
 
-std::vector<std::string> TorrentFileDeserializerImpl::getPiecesHashes(bencode::dict& infoDictionary)
+std::vector<std::string> TorrentFileDeserializerImpl::getPiecesHashes(const bencode::dict& infoDictionary) const
 {
     const auto piecesFieldValue = getFieldValue<bencode::string>(infoDictionary, piecesFieldName);
 
@@ -93,6 +134,8 @@ bencode::data parseBencode(const std::string& bencodeText)
     }
     catch (const std::exception& e)
     {
+        std::cerr << e.what()<< std::endl;
+
         throw errors::InvalidBencodeFormatError(e.what());
     }
 }
@@ -105,6 +148,8 @@ bencode::dict getDictionary(const bencode::data& data)
     }
     catch (const std::exception& e)
     {
+        std::cerr << e.what() << std::endl;
+
         throw errors::MissingBencodeDictionary{"Missing dictionary."};
     }
 }
@@ -118,7 +163,22 @@ T getFieldValue(const bencode::dict& bencodeDictionary, const std::string& field
     }
     catch (const std::exception& e)
     {
+        std::cerr << e.what() << std::endl;
+
         throw errors::MissingBencodeFieldValue{fmt::format("Missing {} field.", fieldName)};
+    }
+}
+
+template <typename T>
+std::optional<T> getFieldValueAsOptional(const bencode::dict& bencodeDictionary, const std::string& fieldName)
+{
+    try
+    {
+        return std::get<T>(bencodeDictionary.at(fieldName));
+    }
+    catch (const std::exception& e)
+    {
+        return std::nullopt;
     }
 }
 
@@ -131,6 +191,8 @@ bencode::data getFieldValue<bencode::data>(const bencode::dict& bencodeDictionar
     }
     catch (const std::exception& e)
     {
+        std::cerr << e.what()<< std::endl;
+
         throw errors::MissingBencodeFieldValue{fmt::format("Missing {} field.", fieldName)};
     }
 }
