@@ -1,6 +1,7 @@
 #include "TorrentClient.h"
 
 #include <numeric>
+#include <unordered_set>
 
 #include "fmt/format.h"
 
@@ -41,11 +42,33 @@ void TorrentClient::download(const std::string& torrentFilePath, const std::stri
                              torrentFileInfo->pieceLength)
               << std::endl;
 
+    std::shared_ptr<core::PiecesSerializer> piecesSerializer = std::make_shared<core::PiecesSerializerImpl>();
+
+    const auto outputFilePath = fmt::format("{}/{}", destinationDirectory, torrentFileInfo->fileName);
+
+    const auto metadataFilePath = fmt::format("{}/.{}.metadata", destinationDirectory, torrentFileInfo->fileName);
+
+    std::shared_ptr<core::PieceRepository> pieceRepository = std::make_shared<core::PieceRepositoryImpl>(
+        fileSystemService, piecesSerializer, torrentFileInfo->pieceLength, outputFilePath, metadataFilePath);
+
     std::vector<int> iotaData(numberOfPieces);
 
     std::iota(iotaData.begin(), iotaData.end(), 0);
 
-    auto piecesQueue = libs::collection::ThreadSafeQueue{iotaData};
+    std::set<int> piecesIds{iotaData.begin(), iotaData.end()};
+
+    auto downloadedPiecesIds = pieceRepository->findAllPiecesIds();
+
+    for (auto pieceId : downloadedPiecesIds)
+    {
+        piecesIds.erase(pieceId);
+    }
+
+    auto piecesQueue = libs::collection::ThreadSafeQueue{std::vector(piecesIds.begin(), piecesIds.end())};
+
+    std::cout << fmt::format("Already downloaded {} out of {} pieces, left {} pieces to download",
+                             downloadedPiecesIds.size(), numberOfPieces, piecesQueue.size())
+              << std::endl;
 
     const auto peerId = PeerIdGenerator::generate();
 
@@ -61,15 +84,6 @@ void TorrentClient::download(const std::string& torrentFilePath, const std::stri
     const auto response = peerRetriever->retrievePeers(retrievePeersPayload);
 
     std::cout << fmt::format("Got list of {} peers.", response.peersEndpoints.size()) << std::endl;
-
-    std::shared_ptr<core::PiecesSerializer> piecesSerializer = std::make_shared<core::PiecesSerializerImpl>();
-
-    const auto outputFilePath = fmt::format("{}/{}", destinationDirectory, torrentFileInfo->fileName);
-
-    const auto metadataFilePath = fmt::format("{}/.{}.metadata", destinationDirectory, torrentFileInfo->fileName);
-
-    std::shared_ptr<core::PieceRepository> pieceRepository = std::make_shared<core::PieceRepositoryImpl>(
-        fileSystemService, piecesSerializer, torrentFileInfo->pieceLength, outputFilePath, metadataFilePath);
 
     boost::asio::io_context context;
 
@@ -99,6 +113,15 @@ void TorrentClient::download(const std::string& torrentFilePath, const std::stri
         {
             thread.join();
         }
+    }
+
+    if (piecesQueue.empty())
+    {
+        std::cout << "Torrent downloaded successfully" << std::endl;
+    }
+    else
+    {
+        std::cout << "There left " << piecesQueue.size() << " pieces to download" << std::endl;
     }
 }
 }

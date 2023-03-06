@@ -1,6 +1,8 @@
 #include "PeerToPeerSessionImpl.h"
 
+#include <boost/beast/core/tcp_stream.hpp>
 #include <iostream>
+#include <optional>
 
 #include "fmt/format.h"
 
@@ -29,7 +31,9 @@ PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
       pieceBytesRead{0},
       maxBlockSize{16384},
       bitfield{std::nullopt},
-      pieceData{}
+      pieceData{},
+      timeout{5},
+      deadline(ioContext)
 {
 }
 
@@ -38,6 +42,10 @@ void PeerToPeerSessionImpl::startSession()
     const auto address = boost::asio::ip::make_address(peerEndpoint.address);
 
     endpoint = boost::asio::ip::tcp::endpoint(address, peerEndpoint.port);
+
+    deadline.expires_from_now(boost::posix_time::seconds(timeout));
+
+    deadline.async_wait([this](boost::system::error_code) { checkDeadline(); });
 
     socket.async_connect(
         endpoint,
@@ -408,6 +416,8 @@ void PeerToPeerSessionImpl::asyncRead(std::size_t bytesToRead,
 {
     if (not hasErrorOccurred)
     {
+        deadline.expires_from_now(boost::posix_time::seconds(timeout));
+
         boost::asio::async_read(socket, response, boost::asio::transfer_exactly(bytesToRead), readHandler);
     }
 }
@@ -417,7 +427,30 @@ void PeerToPeerSessionImpl::asyncWrite(boost::asio::const_buffer writeBuffer,
 {
     if (not hasErrorOccurred)
     {
+        deadline.expires_from_now(boost::posix_time::seconds(timeout));
+
         boost::asio::async_write(socket, writeBuffer, writeHandler);
+    }
+}
+
+void PeerToPeerSessionImpl::checkDeadline()
+{
+    if (hasErrorOccurred)
+        return;
+
+    if (deadline.expires_at() <= boost::asio::deadline_timer::traits_type::now())
+    {
+        socket.close();
+
+        hasErrorOccurred = true;
+
+        std::cerr << endpoint << ": timeout" << std::endl;
+
+        returnPieceToQueue();
+    }
+    else
+    {
+        deadline.async_wait([this](boost::system::error_code) { checkDeadline(); });
     }
 }
 }
