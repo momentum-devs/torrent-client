@@ -50,7 +50,7 @@ Supported Features
 ==========================
 The current implementation of this BitTorrent client only supports the following features:
 
-- Downloading single-file torrents in a multi-threaded manner.
-- Downloading multi-file torrents in a multi-threaded manner.
+- Downloading single-file torrents in a multithreaded manner.
+- Downloading multi-file torrents in a multithreaded manner.
 - Resuming a download.
 - Connecting to as many peers as possible.
