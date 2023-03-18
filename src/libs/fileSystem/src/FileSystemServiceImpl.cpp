@@ -1,8 +1,10 @@
 #include "FileSystemServiceImpl.h"
 
+#include <boost/algorithm/string.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 #include "fmt/core.h"
 
@@ -12,6 +14,12 @@ namespace libs::fileSystem
 {
 void FileSystemServiceImpl::write(const std::string& absolutePath, const std::string& content) const
 {
+    if (not exists(getParentDirectory(absolutePath)))
+    {
+        std::cout << absolutePath << std::endl;
+        createDirectory(getParentDirectory(absolutePath));
+    }
+
     std::ofstream fileStream{absolutePath};
 
     if (!fileStream.is_open())
@@ -85,4 +93,8 @@ void FileSystemServiceImpl::remove(const std::string& absolutePath) const
     std::filesystem::remove_all(absolutePath);
 }
 
+void FileSystemServiceImpl::createDirectory(const std::string& absolutePath) const
+{
+    std::filesystem::create_directories(absolutePath);
+}
 }

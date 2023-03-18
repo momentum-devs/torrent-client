@@ -19,5 +19,6 @@ public:
     MOCK_METHOD(std::string, getParentDirectory, (const std::string& absolutePath), (const));
     MOCK_METHOD(std::string, getFileName, (const std::string& absolutePath), (const));
     MOCK_METHOD(void, remove, (const std::string& absolutePath), (const));
+    MOCK_METHOD(void, createDirectory, (const std::string& absolutePath), (const));
 };
 }

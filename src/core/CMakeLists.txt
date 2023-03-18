@@ -20,7 +20,8 @@ set(UT_SOURCES
         src/session/HandshakeMessageSerializerTest.cpp
         src/session/MessageSerializerTest.cpp
         src/session/HashValidatorTest.cpp
-        src/session/PieceRepositoryImplTest.cpp
+        src/session/PieceRepositoryImplSingleFileTest.cpp
+        src/session/PieceRepositoryImplMultiFileTest.cpp
         src/session/PiecesSerializerImplTest.cpp
         )
 
