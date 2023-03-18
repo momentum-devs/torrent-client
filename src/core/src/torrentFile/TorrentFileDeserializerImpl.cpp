@@ -40,11 +40,11 @@ TorrentFileInfo TorrentFileDeserializerImpl::deserialize(const std::string& torr
 
     const auto bencodeDictionary = getDictionary(bencodeData);
 
-    const auto announce = getFieldValue<bencode::string>(bencodeDictionary, announceFieldName);
+    const auto announceFieldValue = getFieldValue<bencode::string>(bencodeDictionary, announceFieldName);
 
     const auto announceList = getFieldValueAsOptional<bencode::list>(bencodeDictionary, announceListFieldName);
 
-    std::set<std::string> announceFullList{announce};
+    std::set<std::string> announceFullList{announceFieldValue};
 
     if (announceList)
     {
@@ -53,6 +53,12 @@ TorrentFileInfo TorrentFileDeserializerImpl::deserialize(const std::string& torr
             for (const auto& optionalAnnounce : std::get<bencode::list>(optionalAnnounceList))
             {
                 std::string announce = std::get<std::string>(optionalAnnounce);
+
+                if (announce.find("ipv6") != std::string::npos)
+                {
+                    continue;
+                }
+
                 announceFullList.insert(announce);
             }
         }

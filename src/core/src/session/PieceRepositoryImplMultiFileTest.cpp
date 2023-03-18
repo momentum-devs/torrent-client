@@ -105,12 +105,12 @@ TEST_F(PieceRepositoryImplMultiFileTest, givenNotExistingFromFile2PieceId_should
     repository.save(pieceId, data);
 }
 
-TEST_F(PieceRepositoryImplMultiFileTest, findAllPiecesIds)
+TEST_F(PieceRepositoryImplMultiFileTest, getDownloadedPieces)
 {
     EXPECT_CALL(*fileSystemService, read(metadataFilePath)).WillOnce(Return(serializedPiecesIds));
     EXPECT_CALL(*piecesSerializer, deserialize(serializedPiecesIds)).WillOnce(Return(piecesIds));
 
-    const auto allPiecesIds = repository.findAllPiecesIds();
+    const auto allPiecesIds = repository.getDownloadedPieces();
 
     EXPECT_EQ(allPiecesIds, piecesIds);
 }

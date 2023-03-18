@@ -4,6 +4,8 @@
 
 #include "fmt/core.h"
 
+#include "bytes/BytesConverter.h"
+
 namespace core
 {
 PieceRepositoryImpl::PieceRepositoryImpl(std::shared_ptr<libs::fileSystem::FileSystemService> fileSystemServiceInit,
@@ -66,7 +68,16 @@ PieceRepositoryImpl::PieceRepositoryImpl(std::shared_ptr<libs::fileSystem::FileS
 
     if (not fileSystemService->exists(absoluteMetadataFilePath))
     {
-        fileSystemService->write(absoluteMetadataFilePath, "[]");
+        fileSystemService->write(absoluteMetadataFilePath, "");
+    }
+    else
+    {
+        auto data = fileSystemService->read(absoluteMetadataFilePath);
+        for (size_t i = 0; i < data.size(); i += 4)
+        {
+            downloadedPiecesIds.push_back(libs::bytes::BytesConverter::bytesToInt(
+                std::basic_string<unsigned char>{data.c_str() + i, data.c_str() + i + 4}));
+        }
     }
 }
 
@@ -74,12 +85,8 @@ void PieceRepositoryImpl::save(unsigned int pieceId, const std::basic_string<uns
 {
     std::lock_guard<std::mutex> guard(lock);
 
-    const auto metadataFileContent = fileSystemService->read(absoluteMetadataFilePath);
-
-    auto currentPiecesIds = piecesSerializer->deserialize(metadataFileContent);
-
-    const auto pieceAlreadyExists =
-        std::any_of(currentPiecesIds.cbegin(), currentPiecesIds.cend(), [&](unsigned int id) { return id == pieceId; });
+    const auto pieceAlreadyExists = std::any_of(downloadedPiecesIds.cbegin(), downloadedPiecesIds.cend(),
+                                                [&](unsigned int id) { return id == pieceId; });
 
     if (pieceAlreadyExists)
     {
@@ -92,22 +99,20 @@ void PieceRepositoryImpl::save(unsigned int pieceId, const std::basic_string<uns
 
     fileSystemService->writeAtPosition(fileInfo.filePath, data, position);
 
-    currentPiecesIds.push_back(pieceId);
+    const auto metadataFilePosition = downloadedPiecesIds.size() * 4;
 
-    const auto serializedPiecesIds = piecesSerializer->serialize(currentPiecesIds);
+    const auto metadataFileData = libs::bytes::BytesConverter::int32ToBytes(pieceId);
 
-    fileSystemService->write(absoluteMetadataFilePath, serializedPiecesIds);
+    fileSystemService->writeAtPosition(absoluteMetadataFilePath, metadataFileData, metadataFilePosition);
+
+    downloadedPiecesIds.push_back(pieceId);
 }
 
-std::vector<unsigned int> PieceRepositoryImpl::findAllPiecesIds() const
+const std::vector<unsigned int>& PieceRepositoryImpl::getDownloadedPieces() const
 {
     std::lock_guard<std::mutex> guard(lock);
 
-    const auto metadataFileContent = fileSystemService->read(absoluteMetadataFilePath);
-
-    auto piecesIds = piecesSerializer->deserialize(metadataFileContent);
-
-    return piecesIds;
+    return downloadedPiecesIds;
 }
 
 bool PieceRepositoryImpl::contains(unsigned int pieceId) const

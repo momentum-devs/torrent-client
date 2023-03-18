@@ -2,15 +2,15 @@
 
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
+#include <chrono>
 #include <iostream>
 #include <random>
 #include <regex>
 
+#include "fmt/core.h"
 #include "fmt/format.h"
 
 #include "bytes/BytesConverter.h"
-#include "fmt/core.h"
-
 #include "encoder/HexEncoder.h"
 
 namespace core
@@ -43,7 +43,6 @@ std::basic_string<unsigned char> buildUdpConnectionRequest()
     // transaction id
     const auto x = getRandomNumber();
 
-    std::cout << "transaction id: " << x << std::endl;
     connectionRequest += libs::bytes::BytesConverter::int32ToBytes(x);
 
     return connectionRequest;
@@ -105,13 +104,13 @@ RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPaylo
 
             std::regex portExpression(":(\\d+)/");
 
-            std::smatch portNatch;
+            std::smatch portMatch;
 
             std::string portNumber;
 
-            if (std::regex_search(announceUrl, portNatch, portExpression))
+            if (std::regex_search(announceUrl, portMatch, portExpression))
             {
-                portNumber = portNatch[1].str();
+                portNumber = portMatch[1].str();
             }
             else
             {
@@ -124,20 +123,44 @@ RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPaylo
 
             boost::asio::ip::udp::resolver::query query(host, portNumber);
 
-            const auto iter = resolver.resolve(query);
+            boost::asio::ip::udp::endpoint remoteEndpoint;
 
-            auto remoteEndpoint = iter->endpoint();
+            try
+            {
+                remoteEndpoint = resolver.resolve(query)->endpoint();
+            }
+            catch (const std::exception&)
+            {
+                continue;
+            }
 
-            boost::asio::ip::udp::socket socket(context);
+            boost::asio::thread_pool ioc;
+
+            boost::asio::ip::udp::socket socket(ioc);
+
             socket.open(boost::asio::ip::udp::v4());
+
+            if (remoteEndpoint.protocol() == boost::asio::ip::udp::v6())
+            {
+                continue;
+            }
 
             socket.send_to(boost::asio::buffer(buildUdpConnectionRequest()), remoteEndpoint);
 
             char connectResponseData[16];
 
-            boost::system::error_code errorCode;
+            auto future = socket.async_receive(boost::asio::buffer(&connectResponseData, 16), boost::asio::use_future);
 
-            socket.receive(boost::asio::buffer(&connectResponseData, 16), 0, errorCode);
+            using namespace std::chrono_literals;
+
+            const auto futureStatus = future.wait_for(50ms);
+
+            if (futureStatus == std::future_status::timeout || futureStatus == std::future_status::deferred)
+            {
+                continue;
+            }
+
+            ioc.join();
 
             const auto receivedConnectionId =
                 std::basic_string<unsigned char>{connectResponseData + 8, connectResponseData + 16};
@@ -154,7 +177,8 @@ RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPaylo
                 std::string{announceResponseData + 20, announceResponseData + announceResponseBytesReceived});
 
             peerEndpoints.insert(deserializedPeersEndpoints.begin(), deserializedPeersEndpoints.end());
-            continue ;
+
+            continue;
         }
 
         const auto queryParameters =
@@ -170,17 +194,13 @@ RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPaylo
 
         if (response.statusCode != 200)
         {
-            fmt::print("Tracker {} response with code {} \n", announceUrl, response.statusCode);
             continue;
         }
 
         auto deserializedResponse = responseDeserializer->deserializeBencode(response.data);
 
-        fmt::print("From {} get {} peers \n", announceUrl, deserializedResponse.peersEndpoints.size());
-
         peerEndpoints.insert(deserializedResponse.peersEndpoints.begin(), deserializedResponse.peersEndpoints.end());
     }
-
 
     if (peerEndpoints.empty())
     {

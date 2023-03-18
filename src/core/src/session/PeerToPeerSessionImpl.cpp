@@ -16,7 +16,7 @@ namespace core
 {
 namespace
 {
-const int timeoutInSeconds{5};
+const int timeoutInSeconds{60};
 const int maxBlockSize{16384};
 }
 
@@ -340,7 +340,10 @@ void PeerToPeerSessionImpl::handlePieceMessage(const Message& pieceMessage)
 
     if (pieceBytesRead >= torrentFileInfo->pieceLength)
     {
-        std::cout << "Piece " << blockPieceIndex << " downloaded from " << endpoint << std::endl;
+        std::cout << "Piece with number " << blockPieceIndex << " downloaded from " << endpoint
+                  << fmt::format("({}/{})", pieceRepository->getDownloadedPieces().size(),
+                                 torrentFileInfo->piecesHashes.size())
+                  << std::endl;
 
         auto numberOfPiecesIndexes = static_cast<int>(piecesQueue.size());
 

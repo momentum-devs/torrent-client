@@ -51,7 +51,7 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     std::set<int> piecesIds{iotaData.begin(), iotaData.end()};
 
-    auto downloadedPiecesIds = pieceRepository->findAllPiecesIds();
+    auto downloadedPiecesIds = pieceRepository->getDownloadedPieces();
 
     for (auto pieceId : downloadedPiecesIds)
     {
@@ -92,7 +92,7 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     std::vector<std::thread> threads;
 
-    const auto numberOfSupportedThreads = std::thread::hardware_concurrency() * 2;
+    const auto numberOfSupportedThreads = response.peersEndpoints.size();
 
     threads.reserve(numberOfSupportedThreads);
 

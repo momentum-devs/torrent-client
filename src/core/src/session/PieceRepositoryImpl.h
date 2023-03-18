@@ -17,7 +17,7 @@ public:
                         const std::string& destinationDirectory);
 
     void save(unsigned int pieceId, const std::basic_string<unsigned char>& data) override;
-    std::vector<unsigned int> findAllPiecesIds() const override;
+    const std::vector<unsigned int>& getDownloadedPieces() const override;
     bool contains(unsigned int pieceId) const override;
 
 private:
@@ -29,6 +29,7 @@ private:
     const std::shared_ptr<TorrentFileInfo> torrentFileInfo;
     const std::string absoluteMetadataFilePath;
     std::vector<FilePieceInfo> filesInfo;
+    std::vector<unsigned int> downloadedPiecesIds;
     mutable std::mutex lock;
 };
 }
