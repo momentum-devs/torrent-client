@@ -56,7 +56,8 @@ TEST_F(PeerRetrieverImplTest, retrievesPeers)
 
     EXPECT_CALL(*responseDeserializerMock, deserialize(responseBody)).WillOnce(Return(deserializedResponse));
 
-    const auto payload = RetrievePeersPayload{announceUrl, infoHash, peerId, port, uploaded, downloaded, left, compact};
+    const auto payload =
+        RetrievePeersPayload{{announceUrl}, infoHash, peerId, port, uploaded, downloaded, left, compact};
 
     const auto data = retriever.retrievePeers(payload);
 

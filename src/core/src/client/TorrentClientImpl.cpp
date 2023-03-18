@@ -66,7 +66,7 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     const auto peerId = PeerIdGenerator::generate();
 
-    const auto retrievePeersPayload = RetrievePeersPayload{torrentFileInfo->announce,
+    const auto retrievePeersPayload = RetrievePeersPayload{torrentFileInfo->announceList,
                                                            torrentFileInfo->infoHash,
                                                            peerId,
                                                            "0",

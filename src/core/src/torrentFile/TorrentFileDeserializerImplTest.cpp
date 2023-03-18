@@ -47,7 +47,7 @@ TEST_F(TorrentFileDeserializerImplTest, deserializeTorrentFile)
 {
     const auto torrentFileInfo = torrentFileDeserializer.deserialize(validTorrentFileContent);
 
-    ASSERT_EQ(torrentFileInfo.announce, "http://bttracker.debian.org:6969/announce");
+    ASSERT_EQ(torrentFileInfo.announceList[0], "http://bttracker.debian.org:6969/announce");
     ASSERT_EQ(torrentFileInfo.infoHash, "b3f4b20f822c471cfd97745abb98e69b4fe0986e");
     ASSERT_EQ(torrentFileInfo.length, 399507456);
     ASSERT_EQ(torrentFileInfo.pieceLength, 262144);
@@ -60,7 +60,7 @@ TEST_F(TorrentFileDeserializerImplTest, deserializeMultiFileTorrentFile)
 {
     const auto torrentFileInfo = torrentFileDeserializer.deserialize(validMultiFilesTorrentFileContent);
 
-    ASSERT_EQ(torrentFileInfo.announce, "udp://tracker.leechers-paradise.org:6969/announce");
+    ASSERT_EQ(torrentFileInfo.announceList[0], "udp://tracker.leechers-paradise.org:6969/announce");
     ASSERT_EQ(torrentFileInfo.infoHash, "9e8cbe0fc04f2c6eced5896173bdedbeca846f4d");
     ASSERT_EQ(torrentFileInfo.length, 10562409472);
     ASSERT_EQ(torrentFileInfo.pieceLength, 1048576);

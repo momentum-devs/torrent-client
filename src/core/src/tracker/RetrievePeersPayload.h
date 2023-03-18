@@ -2,6 +2,7 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "collection/StlOperators.h"
 
@@ -9,7 +10,7 @@ namespace core
 {
 struct RetrievePeersPayload
 {
-    std::string announceUrl;
+    std::vector<std::string> announceList;
     std::string infoHash;
     std::string peerId;
     std::string port;
@@ -21,7 +22,7 @@ struct RetrievePeersPayload
 
 inline std::ostream& operator<<(std::ostream& os, const RetrievePeersPayload& retrievePeersPayload)
 {
-    return os << "announceUrl: " << retrievePeersPayload.announceUrl << "\ninfoHash: " << retrievePeersPayload.infoHash
+    return os << "announceUrl: " << retrievePeersPayload.announceList << "\ninfoHash: " << retrievePeersPayload.infoHash
               << "\npeerId: " << retrievePeersPayload.peerId << "\nport: " << retrievePeersPayload.port
               << "\nuploaded: " << retrievePeersPayload.uploaded << "\ndownloaded: " << retrievePeersPayload.downloaded
               << "\nleft: " << retrievePeersPayload.left << "\ncompact: " << retrievePeersPayload.compact;
@@ -31,7 +32,7 @@ inline bool operator==(const RetrievePeersPayload& lhs, const RetrievePeersPaylo
 {
     auto tieStruct = [](const RetrievePeersPayload& retrievePeersPayload)
     {
-        return std::tie(retrievePeersPayload.announceUrl, retrievePeersPayload.infoHash, retrievePeersPayload.peerId,
+        return std::tie(retrievePeersPayload.announceList, retrievePeersPayload.infoHash, retrievePeersPayload.peerId,
                         retrievePeersPayload.port, retrievePeersPayload.uploaded, retrievePeersPayload.downloaded,
                         retrievePeersPayload.left, retrievePeersPayload.compact);
     };
