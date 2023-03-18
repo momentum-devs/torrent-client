@@ -7,9 +7,7 @@ namespace core
 class AnnounceResponseDeserializerImpl : public AnnounceResponseDeserializer
 {
 public:
-    RetrievePeersResponse deserialize(const std::string&) const override;
-
-private:
-    std::vector<PeerEndpoint> getPeersEndpoints(const std::string& peers) const;
+    RetrievePeersResponse deserializeBencode(const std::string&) const override;
+    std::vector<PeerEndpoint> deserializePeersEndpoints(const std::string& peers) const override;
 };
 }

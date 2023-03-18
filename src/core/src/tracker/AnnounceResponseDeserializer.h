@@ -9,6 +9,7 @@ class AnnounceResponseDeserializer
 public:
     virtual ~AnnounceResponseDeserializer() = default;
 
-    virtual RetrievePeersResponse deserialize(const std::string&) const = 0;
+    virtual RetrievePeersResponse deserializeBencode(const std::string&) const = 0;
+    virtual std::vector<PeerEndpoint> deserializePeersEndpoints(const std::string&) const = 0;
 };
 }

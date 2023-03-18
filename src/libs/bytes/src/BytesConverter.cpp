@@ -11,12 +11,38 @@ namespace
 const size_t bytesInInteger = 4;
 }
 
-std::basic_string<unsigned char> BytesConverter::intToBytes(unsigned int data)
+std::basic_string<unsigned char> BytesConverter::int64ToBytes(long data)
+{
+    std::basic_string<unsigned char> bytes;
+
+    bytes += static_cast<char>(data >> 56);
+    bytes += static_cast<char>(data >> 48);
+    bytes += static_cast<char>(data >> 40);
+    bytes += static_cast<char>(data >> 32);
+    bytes += static_cast<char>(data >> 24);
+    bytes += static_cast<char>(data >> 16);
+    bytes += static_cast<char>(data >> 8);
+    bytes += static_cast<char>(data);
+
+    return bytes;
+}
+
+std::basic_string<unsigned char> BytesConverter::int32ToBytes(unsigned int data)
 {
     std::basic_string<unsigned char> bytes;
 
     bytes += static_cast<char>(data >> 24);
     bytes += static_cast<char>(data >> 16);
+    bytes += static_cast<char>(data >> 8);
+    bytes += static_cast<char>(data);
+
+    return bytes;
+}
+
+std::basic_string<unsigned char> BytesConverter::int16ToBytes(unsigned int data)
+{
+    std::basic_string<unsigned char> bytes;
+
     bytes += static_cast<char>(data >> 8);
     bytes += static_cast<char>(data);
 

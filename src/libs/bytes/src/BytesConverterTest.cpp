@@ -7,7 +7,7 @@ using namespace libs::bytes;
 
 TEST(BytesConverterTest, convertsIntegerIntoBytes)
 {
-    const auto result = BytesConverter::intToBytes(19);
+    const auto result = BytesConverter::int32ToBytes(19);
 
     ASSERT_EQ(result[0], '\0');
     ASSERT_EQ(result[1], '\0');

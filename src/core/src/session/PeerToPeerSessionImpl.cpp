@@ -301,9 +301,9 @@ void PeerToPeerSessionImpl::handleUnchokeMessage()
     }
 
     const auto requestMessage =
-        Message{MessageId::Request, libs::bytes::BytesConverter::intToBytes(*pieceIndex) +
-                                        libs::bytes::BytesConverter::intToBytes(pieceBytesRead) +
-                                        libs::bytes::BytesConverter::intToBytes(maxBlockSize)};
+        Message{MessageId::Request, libs::bytes::BytesConverter::int32ToBytes(*pieceIndex) +
+                                        libs::bytes::BytesConverter::int32ToBytes(pieceBytesRead) +
+                                        libs::bytes::BytesConverter::int32ToBytes(maxBlockSize)};
 
     const auto serializedRequestMessage = MessageSerializer().serialize(requestMessage);
 
@@ -399,9 +399,9 @@ void PeerToPeerSessionImpl::handlePieceMessage(const Message& pieceMessage)
                                    maxBlockSize;
 
     const auto requestMessage =
-        Message{MessageId::Request, libs::bytes::BytesConverter::intToBytes(*pieceIndex) +
-                                        libs::bytes::BytesConverter::intToBytes(pieceBytesRead) +
-                                        libs::bytes::BytesConverter::intToBytes(byteToRequest)};
+        Message{MessageId::Request, libs::bytes::BytesConverter::int32ToBytes(*pieceIndex) +
+                                        libs::bytes::BytesConverter::int32ToBytes(pieceBytesRead) +
+                                        libs::bytes::BytesConverter::int32ToBytes(byteToRequest)};
 
     const auto serializedRequestMessage = MessageSerializer().serialize(requestMessage);
 

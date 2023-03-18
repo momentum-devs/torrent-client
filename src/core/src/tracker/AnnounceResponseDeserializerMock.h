@@ -9,6 +9,6 @@ namespace core
 class AnnounceResponseDeserializerMock : public AnnounceResponseDeserializer
 {
 public:
-    MOCK_CONST_METHOD1(deserialize, RetrievePeersResponse(const std::string&));
+    MOCK_CONST_METHOD1(deserializeBencode, RetrievePeersResponse(const std::string&));
 };
 }

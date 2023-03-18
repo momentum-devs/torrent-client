@@ -20,7 +20,7 @@ constexpr auto intervalFieldName = "interval";
 constexpr auto peersFieldName = "peers";
 }
 
-RetrievePeersResponse AnnounceResponseDeserializerImpl::deserialize(const std::string& response) const
+RetrievePeersResponse AnnounceResponseDeserializerImpl::deserializeBencode(const std::string& response) const
 {
     auto bencodeData = parseBencode(response);
 
@@ -30,12 +30,12 @@ RetrievePeersResponse AnnounceResponseDeserializerImpl::deserialize(const std::s
 
     auto peers = getFieldValue<bencode::string>(bencodeDictionary, peersFieldName);
 
-    auto peersEndpoints = getPeersEndpoints(peers);
+    auto peersEndpoints = deserializePeersEndpoints(peers);
 
     return {interval, peersEndpoints};
 }
 
-std::vector<PeerEndpoint> AnnounceResponseDeserializerImpl::getPeersEndpoints(const std::string& peers) const
+std::vector<PeerEndpoint> AnnounceResponseDeserializerImpl::deserializePeersEndpoints(const std::string& peers) const
 {
     std::vector<PeerEndpoint> peersEndpoints;
 

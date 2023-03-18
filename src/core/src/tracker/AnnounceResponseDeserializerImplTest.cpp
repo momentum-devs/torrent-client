@@ -26,9 +26,9 @@ public:
     AnnounceResponseDeserializerImpl deserializer;
 };
 
-TEST_F(AnnounceResponseDeserializerImplTest, deserialize)
+TEST_F(AnnounceResponseDeserializerImplTest, deserializeBencode)
 {
-    auto deserializedResponse = deserializer.deserialize(validAnnounceResponseFileContent);
+    auto deserializedResponse = deserializer.deserializeBencode(validAnnounceResponseFileContent);
 
     std::cout << deserializedResponse;
 
