@@ -3,8 +3,6 @@
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <chrono>
-#include <iostream>
-#include <random>
 #include <regex>
 
 #include "fmt/core.h"
@@ -12,38 +10,24 @@
 
 #include "bytes/BytesConverter.h"
 #include "encoder/HexEncoder.h"
+#include "random/RandomGenerator.h"
 
 namespace core
 {
 namespace
 {
 
-int getRandomNumber()
-{
-    std::random_device randomDevice;
-    std::mt19937 pseudoRandomGenerator(randomDevice());
-
-    std::uniform_int_distribution<int> distribution(0, 10000);
-
-    const int randomNumber = distribution(pseudoRandomGenerator);
-
-    return randomNumber;
-}
-
 std::basic_string<unsigned char> buildUdpConnectionRequest()
 {
-    std::basic_string<unsigned char> connectionRequest;
 
-    // connection id
-    connectionRequest += libs::bytes::BytesConverter::int64ToBytes(0x41727101980);
+    const auto connectionId = libs::bytes::BytesConverter::int64ToBytes(0x41727101980);
 
-    // action
-    connectionRequest += libs::bytes::BytesConverter::int32ToBytes(0);
+    const auto action = libs::bytes::BytesConverter::int32ToBytes(0);
 
-    // transaction id
-    const auto x = getRandomNumber();
+    const auto transactionId =
+        libs::bytes::BytesConverter::int32ToBytes(libs::random::RandomGenerator::generateNumber(0, 100000));
 
-    connectionRequest += libs::bytes::BytesConverter::int32ToBytes(x);
+    auto connectionRequest = connectionId + action + transactionId;
 
     return connectionRequest;
 }
@@ -56,7 +40,7 @@ std::basic_string<unsigned char> buildUdpAnnounceRequest(const RetrievePeersPayl
     announceRequest += connectionId;
     const auto action = libs::bytes::BytesConverter::int32ToBytes(1);
     announceRequest += action;
-    announceRequest += libs::bytes::BytesConverter::int32ToBytes(getRandomNumber());
+    announceRequest += libs::bytes::BytesConverter::int32ToBytes(libs::random::RandomGenerator::generateNumber(0, 100000)));
     announceRequest +=
         reinterpret_cast<const unsigned char*>(libs::encoder::HexEncoder::decode(payload.infoHash).c_str());
     announceRequest += reinterpret_cast<const unsigned char*>(payload.peerId.c_str());
@@ -65,11 +49,51 @@ std::basic_string<unsigned char> buildUdpAnnounceRequest(const RetrievePeersPayl
     announceRequest += libs::bytes::BytesConverter::int64ToBytes(std::stol(payload.uploaded));
     announceRequest += libs::bytes::BytesConverter::int32ToBytes(0);
     announceRequest += libs::bytes::BytesConverter::int32ToBytes(0);
-    announceRequest += libs::bytes::BytesConverter::int32ToBytes(getRandomNumber());
+    announceRequest += libs::bytes::BytesConverter::int32ToBytes(libs::random::RandomGenerator::generateNumber(0, 100000)));
     announceRequest += libs::bytes::BytesConverter::int32ToBytes(-1);
     announceRequest += libs::bytes::BytesConverter::int16ToBytes(std::stoi(payload.port));
 
     return announceRequest;
+}
+
+std::string findHostInUrl(const std::string& url)
+{
+    std::regex hostExpression("//(.+):");
+
+    std::smatch hostNatch;
+
+    std::string host;
+
+    if (std::regex_search(url, hostNatch, hostExpression))
+    {
+        host = hostNatch[1].str();
+    }
+    else
+    {
+        throw std::runtime_error{fmt::format("Host not found in url: {}", url)};
+    }
+
+    return host;
+}
+
+std::string findPortNumberInUrl(const std::string& url)
+{
+    std::regex portExpression(":(\\d+)/");
+
+    std::smatch portMatch;
+
+    std::string portNumber;
+
+    if (std::regex_search(url, portMatch, portExpression))
+    {
+        portNumber = portMatch[1].str();
+    }
+    else
+    {
+        throw std::runtime_error{fmt::format("Port number not found in url: {}", url)};
+    }
+
+    return portNumber;
 }
 
 }
@@ -87,35 +111,9 @@ RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPaylo
     {
         if (announceUrl.find("udp://") != std::string::npos)
         {
-            std::regex hostExpression("//(.+):");
+            const auto host = findHostInUrl(announceUrl);
 
-            std::smatch hostNatch;
-
-            std::string host;
-
-            if (std::regex_search(announceUrl, hostNatch, hostExpression))
-            {
-                host = hostNatch[1].str();
-            }
-            else
-            {
-                throw std::runtime_error{fmt::format("Host not found in announce url: {}", announceUrl)};
-            }
-
-            std::regex portExpression(":(\\d+)/");
-
-            std::smatch portMatch;
-
-            std::string portNumber;
-
-            if (std::regex_search(announceUrl, portMatch, portExpression))
-            {
-                portNumber = portMatch[1].str();
-            }
-            else
-            {
-                throw std::runtime_error{fmt::format("Port number not found in announce url: {}", announceUrl)};
-            }
+            const auto portNumber = findPortNumberInUrl(announceUrl);
 
             boost::asio::io_context context;
 
@@ -211,5 +209,6 @@ RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPaylo
 
     return response;
 }
+
 
 }
