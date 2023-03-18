@@ -16,5 +16,6 @@ public:
     std::string getParentDirectory(const std::string& absolutePath) const override;
     std::string getFileName(const std::string& absolutePath) const override;
     void remove(const std::string& absolutePath) const override;
+    void createDirectory(const std::string& absolutePath) const override;
 };
 }

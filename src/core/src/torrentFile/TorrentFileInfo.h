@@ -10,7 +10,7 @@ namespace core
 {
 struct TorrentFileInfo
 {
-    std::string announce;
+    std::vector<std::string> announceList;
     std::string infoHash;
     long long length;
     long long pieceLength;
@@ -21,7 +21,7 @@ struct TorrentFileInfo
 
 inline std::ostream& operator<<(std::ostream& os, const TorrentFileInfo& torrentFileInfo)
 {
-    return os << "name: " << torrentFileInfo.name << "\nannounce: " << torrentFileInfo.announce
+    return os << "name: " << torrentFileInfo.name << "\nannounce: " << torrentFileInfo.announceList
               << "\ninfo hash: " << torrentFileInfo.infoHash << "\nlength: " << torrentFileInfo.length
               << "\npiece length: " << torrentFileInfo.pieceLength
               << "\nnested files info: " << torrentFileInfo.nestedFilesInfo
@@ -32,7 +32,7 @@ inline bool operator==(const TorrentFileInfo& lhs, const TorrentFileInfo& rhs)
 {
     auto tieStruct = [](const TorrentFileInfo& torrentFileInfo)
     {
-        return std::tie(torrentFileInfo.announce, torrentFileInfo.infoHash, torrentFileInfo.length,
+        return std::tie(torrentFileInfo.announceList, torrentFileInfo.infoHash, torrentFileInfo.length,
                         torrentFileInfo.pieceLength, torrentFileInfo.piecesHashes, torrentFileInfo.name,
                         torrentFileInfo.nestedFilesInfo);
     };

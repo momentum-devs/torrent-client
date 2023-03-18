@@ -24,6 +24,7 @@ template <>
 bencode::data getFieldValue<bencode::data>(const bencode::dict& bencodeDictionary, const std::string& fieldName);
 
 constexpr auto announceFieldName = "announce";
+constexpr auto announceListFieldName = "announce-list";
 constexpr auto infoFieldName = "info";
 constexpr auto nameFieldName = "name";
 constexpr auto nestedFilesFieldName = "files";
@@ -40,6 +41,22 @@ TorrentFileInfo TorrentFileDeserializerImpl::deserialize(const std::string& torr
     const auto bencodeDictionary = getDictionary(bencodeData);
 
     const auto announce = getFieldValue<bencode::string>(bencodeDictionary, announceFieldName);
+
+    const auto announceList = getFieldValueAsOptional<bencode::list>(bencodeDictionary, announceListFieldName);
+
+    std::set<std::string> announceFullList{announce};
+
+    if (announceList)
+    {
+        for (const auto& optionalAnnounceList : *announceList)
+        {
+            for (const auto& optionalAnnounce : std::get<bencode::list>(optionalAnnounceList))
+            {
+                std::string announce = std::get<std::string>(optionalAnnounce);
+                announceFullList.insert(announce);
+            }
+        }
+    }
 
     const auto infoHash = getInfoHash(bencodeDictionary);
 
@@ -84,7 +101,7 @@ TorrentFileInfo TorrentFileDeserializerImpl::deserialize(const std::string& torr
 
     const auto piecesHashes = getPiecesHashes(infoDictionary);
 
-    return {announce,
+    return {std::vector<std::string>{announceFullList.begin(), announceFullList.end()},
             infoHash,
             torrentSize,
             piecesLength,
@@ -134,7 +151,7 @@ bencode::data parseBencode(const std::string& bencodeText)
     }
     catch (const std::exception& e)
     {
-        std::cerr << e.what()<< std::endl;
+        std::cerr << e.what() << std::endl;
 
         throw errors::InvalidBencodeFormatError(e.what());
     }
@@ -191,7 +208,7 @@ bencode::data getFieldValue<bencode::data>(const bencode::dict& bencodeDictionar
     }
     catch (const std::exception& e)
     {
-        std::cerr << e.what()<< std::endl;
+        std::cerr << e.what() << std::endl;
 
         throw errors::MissingBencodeFieldValue{fmt::format("Missing {} field.", fieldName)};
     }

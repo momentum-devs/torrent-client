@@ -42,12 +42,8 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     std::shared_ptr<core::PiecesSerializer> piecesSerializer = std::make_shared<core::PiecesSerializerImpl>();
 
-    const auto outputFilePath = fmt::format("{}/{}", destinationDirectory, torrentFileInfo->name);
-
-    const auto metadataFilePath = fmt::format("{}/.{}.metadata", destinationDirectory, torrentFileInfo->name);
-
     std::shared_ptr<core::PieceRepository> pieceRepository = std::make_shared<core::PieceRepositoryImpl>(
-        fileSystemService, piecesSerializer, torrentFileInfo->pieceLength, outputFilePath, metadataFilePath);
+        fileSystemService, piecesSerializer, torrentFileInfo->pieceLength, torrentFileInfo, destinationDirectory);
 
     std::vector<int> iotaData(numberOfPieces);
 
@@ -70,7 +66,7 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     const auto peerId = PeerIdGenerator::generate();
 
-    const auto retrievePeersPayload = RetrievePeersPayload{"udp://9.rarbg.to:2730/announce",
+    const auto retrievePeersPayload = RetrievePeersPayload{torrentFileInfo->announceList,
                                                            torrentFileInfo->infoHash,
                                                            peerId,
                                                            "0",

@@ -23,6 +23,7 @@ const std::string filenameForWriting = "testWriting.txt";
 const std::string filenameForWritingAtPosition = "testWritingAtPosition.txt";
 const std::string pathForReading{fmt::format("{}/{}", testFilesDirectory, filenameForReading)};
 const std::string pathForWriting{fmt::format("{}/{}", testFilesDirectory, filenameForWriting)};
+const std::string nestedFilePath{fmt::format("{}/dir1/dir2/{}", testFilesDirectory, filenameForWriting)};
 const std::string pathForWritingAtPosition{fmt::format("{}/{}", testFilesDirectory, filenameForWritingAtPosition)};
 const std::string exampleContent{"example data\n"};
 const std::string incorrectPath = "433\\UTzxxxx/fi123xtF";
@@ -41,14 +42,6 @@ TEST_F(FileSystemServiceImplTest, givenCorrectPath_shouldWriteToFile)
     const auto actualFileContent = fileSystemService.read(pathForWriting);
 
     ASSERT_EQ(actualFileContent, textToWrite);
-}
-
-TEST_F(FileSystemServiceImplTest, givenIncorrectPath_shouldThrowFileNotFoundForWritingAppendingAndReading)
-{
-    ASSERT_THROW(fileSystemService.write(incorrectPath, textToWrite), errors::FileNotFound);
-    ASSERT_THROW(fileSystemService.writeAtPosition(incorrectPath, textToWriteAtPosition, 0), errors::FileNotFound);
-    ASSERT_THROW(fileSystemService.append(incorrectPath, textToWrite), errors::FileNotFound);
-    ASSERT_THROW(fileSystemService.read(incorrectPath), errors::FileNotFound);
 }
 
 TEST_F(FileSystemServiceImplTest, givenCorrectPath_shouldAppendToFile)
@@ -92,4 +85,16 @@ TEST_F(FileSystemServiceImplTest, givenFilePath_shouldReturnFileName)
     const auto fileName = fileSystemService.getFileName(pathForReading);
 
     ASSERT_EQ(fileName, filenameForReading);
+}
+
+TEST_F(FileSystemServiceImplTest, givenNestedPath_shouldCreateFileWithSubdirectories)
+{
+    if (fileSystemService.exists(nestedFilePath))
+        fileSystemService.remove(nestedFilePath);
+
+    std::cout << nestedFilePath << std::endl;
+
+    fileSystemService.write(nestedFilePath, "");
+
+    ASSERT_TRUE(fileSystemService.exists(nestedFilePath));
 }
