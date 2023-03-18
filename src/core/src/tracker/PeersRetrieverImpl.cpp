@@ -106,7 +106,9 @@ RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPaylo
                 std::string{announceResponseData + 20, announceResponseData + announceResponseBytesReceived});
 
             peerEndpoints.insert(deserializedPeersEndpoints.begin(), deserializedPeersEndpoints.end());
-        } else {
+        }
+        else
+        {
             const auto queryParameters =
                 std::map<std::string, std::string>{{"info_hash", libs::encoder::HexEncoder::decode(payload.infoHash)},
                                                    {"peer_id", payload.peerId},
@@ -125,7 +127,8 @@ RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPaylo
 
             auto deserializedResponse = responseDeserializer->deserializeBencode(response.data);
 
-            peerEndpoints.insert(deserializedResponse.peersEndpoints.begin(), deserializedResponse.peersEndpoints.end());
+            peerEndpoints.insert(deserializedResponse.peersEndpoints.begin(),
+                                 deserializedResponse.peersEndpoints.end());
         }
     }
 
@@ -163,7 +166,8 @@ std::basic_string<unsigned char> formatUdpAnnounceRequest(const FormatUdpAnnounc
     announceRequest += payload.connectionId;
     const auto action = libs::bytes::BytesConverter::int32ToBytes(1);
     announceRequest += action;
-    announceRequest += libs::bytes::BytesConverter::int32ToBytes(libs::random::RandomGenerator::generateNumber(0, 100000));
+    announceRequest +=
+        libs::bytes::BytesConverter::int32ToBytes(libs::random::RandomGenerator::generateNumber(0, 100000));
     announceRequest +=
         reinterpret_cast<const unsigned char*>(libs::encoder::HexEncoder::decode(payload.infoHash).c_str());
     announceRequest += reinterpret_cast<const unsigned char*>(payload.peerId.c_str());
@@ -172,7 +176,8 @@ std::basic_string<unsigned char> formatUdpAnnounceRequest(const FormatUdpAnnounc
     announceRequest += libs::bytes::BytesConverter::int64ToBytes(std::stol(payload.uploaded));
     announceRequest += libs::bytes::BytesConverter::int32ToBytes(0);
     announceRequest += libs::bytes::BytesConverter::int32ToBytes(0);
-    announceRequest += libs::bytes::BytesConverter::int32ToBytes(libs::random::RandomGenerator::generateNumber(0, 100000)));
+    announceRequest +=
+        libs::bytes::BytesConverter::int32ToBytes(libs::random::RandomGenerator::generateNumber(0, 100000));
     announceRequest += libs::bytes::BytesConverter::int32ToBytes(-1);
     announceRequest += libs::bytes::BytesConverter::int16ToBytes(std::stoi(payload.port));
 

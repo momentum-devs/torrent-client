@@ -60,7 +60,7 @@ TEST_F(TorrentFileDeserializerImplTest, deserializeMultiFileTorrentFile)
 {
     const auto torrentFileInfo = torrentFileDeserializer.deserialize(validMultiFilesTorrentFileContent);
 
-    ASSERT_EQ(torrentFileInfo.announceList[0], "udp://tracker.leechers-paradise.org:6969/announce");
+    ASSERT_EQ(torrentFileInfo.announceList[0], "http://tracker.tfile.co:80/announce");
     ASSERT_EQ(torrentFileInfo.infoHash, "9e8cbe0fc04f2c6eced5896173bdedbeca846f4d");
     ASSERT_EQ(torrentFileInfo.length, 10562409472);
     ASSERT_EQ(torrentFileInfo.pieceLength, 1048576);

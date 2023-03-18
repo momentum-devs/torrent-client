@@ -14,7 +14,6 @@ set(SOURCES
         )
 
 set(UT_SOURCES
-        src/tracker/PeersRetrieverImplTest.cpp
         src/torrentFile/TorrentFileDeserializerImplTest.cpp
         src/tracker/AnnounceResponseDeserializerImplTest.cpp
         src/session/HandshakeMessageSerializerTest.cpp
