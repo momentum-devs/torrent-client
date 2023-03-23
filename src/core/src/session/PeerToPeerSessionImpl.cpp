@@ -16,19 +16,20 @@ namespace core
 {
 namespace
 {
-const int timeoutInSeconds{60};
+const int timeoutInSeconds{100};
 const int maxBlockSize{16384};
 }
 
 PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
                                              libs::collection::ThreadSafeQueue<int>& piecesQueueInit,
-                                             const PeerEndpoint& peerEndpointInit, const std::string& peerIdInit,
-                                             const std::shared_ptr<TorrentFileInfo> torrentFileInfoInit,
-                                             const std::shared_ptr<PieceRepository> pieceRepositoryInit)
+                                             const PeerEndpoint& peerEndpointInit, std::string peerIdInit,
+                                             const std::shared_ptr<TorrentFileInfo>& torrentFileInfoInit,
+                                             const std::shared_ptr<PieceRepository> pieceRepositoryInit,
+                                             PeerToPeerSessionManager& managerInit)
     : socket(ioContext),
       piecesQueue{piecesQueueInit},
       peerEndpoint{peerEndpointInit},
-      peerId{peerIdInit},
+      peerId{std::move(peerIdInit)},
       isChoked{true},
       hasErrorOccurred{false},
       pieceIndex{std::nullopt},
@@ -37,7 +38,8 @@ PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
       pieceBytesRead{0},
       bitfield{std::nullopt},
       pieceData{},
-      deadline(ioContext)
+      deadline(ioContext),
+      sessionManager{managerInit}
 {
 }
 
@@ -338,13 +340,12 @@ void PeerToPeerSessionImpl::handlePieceMessage(const Message& pieceMessage)
 
     pieceData += pieceMessage.payload.substr(8, pieceMessage.payload.size() - 8);
 
-    if (pieceBytesRead >= torrentFileInfo->pieceLength)
-    {
-        std::cout << "Piece with number " << blockPieceIndex << " downloaded from " << endpoint
-                  << fmt::format("({}/{})", pieceRepository->getDownloadedPieces().size(),
-                                 torrentFileInfo->piecesHashes.size())
-                  << std::endl;
+    auto lastPiece = this->torrentFileInfo->piecesHashes.size() - 1;
+    auto lastPieceSize = torrentFileInfo->length % torrentFileInfo->pieceLength;
 
+    if (pieceBytesRead >= torrentFileInfo->pieceLength ||
+        ((*pieceIndex == lastPiece) && (pieceBytesRead >= lastPieceSize)))
+    {
         auto numberOfPiecesIndexes = static_cast<int>(piecesQueue.size());
 
         auto piecesIndexIter = 0;
@@ -352,6 +353,11 @@ void PeerToPeerSessionImpl::handlePieceMessage(const Message& pieceMessage)
         if (HashValidator::compareHashWithData(torrentFileInfo->piecesHashes[blockPieceIndex], pieceData))
         {
             pieceRepository->save(blockPieceIndex, pieceData);
+
+            std::cout << "Piece with number " << blockPieceIndex << " downloaded from " << endpoint
+                      << fmt::format("({}/{})", pieceRepository->getDownloadedPieces().size(),
+                                     torrentFileInfo->piecesHashes.size())
+                      << std::endl;
         }
         else
         {
@@ -451,7 +457,11 @@ void PeerToPeerSessionImpl::asyncRead(std::size_t bytesToRead,
         deadline.expires_from_now(boost::posix_time::seconds(timeoutInSeconds));
 
         boost::asio::async_read(socket, response, boost::asio::transfer_exactly(bytesToRead), readHandler);
+
+        return;
     }
+
+    sessionManager.closeSession(peerEndpoint);
 }
 
 void PeerToPeerSessionImpl::asyncWrite(boost::asio::const_buffer writeBuffer,
@@ -462,13 +472,19 @@ void PeerToPeerSessionImpl::asyncWrite(boost::asio::const_buffer writeBuffer,
         deadline.expires_from_now(boost::posix_time::seconds(timeoutInSeconds));
 
         boost::asio::async_write(socket, writeBuffer, writeHandler);
+
+        return;
     }
+
+    sessionManager.closeSession(peerEndpoint);
 }
 
 void PeerToPeerSessionImpl::checkDeadline()
 {
     if (hasErrorOccurred)
     {
+        sessionManager.closeSession(peerEndpoint);
+
         return;
     }
 

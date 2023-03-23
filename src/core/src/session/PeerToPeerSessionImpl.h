@@ -7,6 +7,7 @@
 #include "HandshakeMessage.h"
 #include "Message.h"
 #include "PeerToPeerSession.h"
+#include "PeerToPeerSessionManager.h"
 #include "PieceRepository.h"
 
 namespace core
@@ -15,9 +16,9 @@ class PeerToPeerSessionImpl : public PeerToPeerSession
 {
 public:
     PeerToPeerSessionImpl(boost::asio::io_context& ioContext, libs::collection::ThreadSafeQueue<int>&,
-                          const PeerEndpoint& peerEndpoint, const std::string& peerId,
-                          const std::shared_ptr<TorrentFileInfo> torrentFileInfo,
-                          const std::shared_ptr<PieceRepository> pieceRepository);
+                          const PeerEndpoint& peerEndpoint, std::string peerId,
+                          const std::shared_ptr<TorrentFileInfo>& torrentFileInfo,
+                          const std::shared_ptr<PieceRepository> pieceRepository, PeerToPeerSessionManager& manager);
 
     void startSession() override;
 
@@ -53,5 +54,6 @@ private:
     std::basic_string<unsigned char> pieceData;
     boost::asio::ip::basic_endpoint<boost::asio::ip::tcp> endpoint;
     boost::asio::deadline_timer deadline;
+    PeerToPeerSessionManager& sessionManager;
 };
 }

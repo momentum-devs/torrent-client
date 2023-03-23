@@ -29,6 +29,6 @@ private:
     std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializer;
     std::unique_ptr<libs::httpClient::HttpClient> httpClient;
     std::unique_ptr<AnnounceResponseDeserializer> responseDeserializer;
-    std::unique_ptr<PeersRetriever> peerRetriever;
+    std::unique_ptr<PeersRetriever> peersRetriever;
 };
 }

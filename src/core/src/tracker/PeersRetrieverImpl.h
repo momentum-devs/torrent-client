@@ -13,7 +13,8 @@ class PeersRetrieverImpl : public PeersRetriever
 public:
     PeersRetrieverImpl(std::unique_ptr<libs::httpClient::HttpClient>, std::unique_ptr<AnnounceResponseDeserializer>);
 
-    RetrievePeersResponse retrievePeers(const RetrievePeersPayload& payload) override;
+    void retrievePeers(const RetrievePeersPayload& payload,
+                       std::function<void(const std::vector<PeerEndpoint>&)> processPeersHandler) override;
 
 private:
     std::unique_ptr<libs::httpClient::HttpClient> httpClient;

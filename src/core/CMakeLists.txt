@@ -11,7 +11,7 @@ set(SOURCES
         src/session/PiecesSerializerImpl.cpp
         src/session/HashValidator.cpp
         src/client/TorrentClientFactory.cpp
-        )
+        src/session/PeerToPeerSessionManager.cpp)
 
 set(UT_SOURCES
         src/torrentFile/TorrentFileDeserializerImplTest.cpp

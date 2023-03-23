@@ -21,7 +21,7 @@ public:
     bool contains(unsigned int pieceId) const override;
 
 private:
-    const FilePieceInfo& getFileInfo(unsigned int pieceId) const;
+    const std::vector<FilePieceInfo> getFileInfo(unsigned int pieceId) const;
 
     std::shared_ptr<libs::fileSystem::FileSystemService> fileSystemService;
     std::shared_ptr<PiecesSerializer> piecesSerializer;

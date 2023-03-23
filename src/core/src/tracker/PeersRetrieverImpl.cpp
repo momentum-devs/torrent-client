@@ -30,116 +30,91 @@ PeersRetrieverImpl::PeersRetrieverImpl(std::unique_ptr<libs::httpClient::HttpCli
 {
 }
 
-RetrievePeersResponse PeersRetrieverImpl::retrievePeers(const RetrievePeersPayload& payload)
+void PeersRetrieverImpl::retrievePeers(const RetrievePeersPayload& payload,
+                                       std::function<void(const std::vector<PeerEndpoint>&)> processPeersHandler)
 {
-    std::set<PeerEndpoint> peerEndpoints;
-
-    for (const auto& announceUrl : payload.announceList)
+    if (payload.announceUrl.find("udp://") != std::string::npos)
     {
-        if (announceUrl.find("udp://") != std::string::npos)
+        const auto host = findHostInUrl(payload.announceUrl);
+
+        const auto portNumber = findPortNumberInUrl(payload.announceUrl);
+
+        boost::asio::io_context context;
+
+        boost::asio::ip::udp::resolver resolver(context);
+
+        boost::asio::ip::udp::resolver::query query(host, portNumber);
+
+        boost::asio::ip::udp::endpoint remoteEndpoint;
+
+        try
         {
-            const auto host = findHostInUrl(announceUrl);
-
-            const auto portNumber = findPortNumberInUrl(announceUrl);
-
-            boost::asio::io_context context;
-
-            boost::asio::ip::udp::resolver resolver(context);
-
-            boost::asio::ip::udp::resolver::query query(host, portNumber);
-
-            boost::asio::ip::udp::endpoint remoteEndpoint;
-
-            try
-            {
-                remoteEndpoint = resolver.resolve(query)->endpoint();
-            }
-            catch (const std::exception&)
-            {
-                continue;
-            }
-
-            boost::asio::thread_pool ioc;
-
-            boost::asio::ip::udp::socket socket(ioc);
-
-            socket.open(boost::asio::ip::udp::v4());
-
-            if (remoteEndpoint.protocol() == boost::asio::ip::udp::v6())
-            {
-                continue;
-            }
-
-            const auto connectionRequestMessage = formatUdpConnectionRequest();
-
-            socket.send_to(boost::asio::buffer(connectionRequestMessage), remoteEndpoint);
-
-            char connectResponseData[16];
-
-            auto future = socket.async_receive(boost::asio::buffer(&connectResponseData, 16), boost::asio::use_future);
-
-            using namespace std::chrono_literals;
-
-            const auto futureStatus = future.wait_for(50ms);
-
-            if (futureStatus == std::future_status::timeout || futureStatus == std::future_status::deferred)
-            {
-                continue;
-            }
-
-            ioc.join();
-
-            const auto receivedConnectionId =
-                std::basic_string<unsigned char>{connectResponseData + 8, connectResponseData + 16};
-
-            const auto announceRequestMessage = formatUdpAnnounceRequest({});
-
-            socket.send_to(boost::asio::buffer(announceRequestMessage), remoteEndpoint);
-
-            char announceResponseData[1024];
-
-            boost::asio::streambuf response;
-
-            const auto announceResponseBytesReceived = socket.receive(boost::asio::buffer(&announceResponseData, 1024));
-
-            auto deserializedPeersEndpoints = responseDeserializer->deserializePeersEndpoints(
-                std::string{announceResponseData + 20, announceResponseData + announceResponseBytesReceived});
-
-            peerEndpoints.insert(deserializedPeersEndpoints.begin(), deserializedPeersEndpoints.end());
+            remoteEndpoint = resolver.resolve(query)->endpoint();
         }
-        else
+        catch (const std::exception&)
         {
-            const auto queryParameters =
-                std::map<std::string, std::string>{{"info_hash", libs::encoder::HexEncoder::decode(payload.infoHash)},
-                                                   {"peer_id", payload.peerId},
-                                                   {"port", payload.port},
-                                                   {"uploaded", payload.uploaded},
-                                                   {"downloaded", payload.downloaded},
-                                                   {"left", payload.left},
-                                                   {"compact", payload.compact}};
-
-            const auto response = httpClient->get({announceUrl, std::nullopt, queryParameters});
-
-            if (response.statusCode != 200)
-            {
-                continue;
-            }
-
-            auto deserializedResponse = responseDeserializer->deserializeBencode(response.data);
-
-            peerEndpoints.insert(deserializedResponse.peersEndpoints.begin(),
-                                 deserializedResponse.peersEndpoints.end());
+            return;
         }
+
+        boost::asio::ip::udp::socket socket(context);
+
+        socket.open(boost::asio::ip::udp::v4());
+
+        if (remoteEndpoint.protocol() == boost::asio::ip::udp::v6())
+        {
+            return;
+        }
+
+        const auto connectionRequestMessage = formatUdpConnectionRequest();
+
+        socket.send_to(boost::asio::buffer(connectionRequestMessage), remoteEndpoint);
+
+        char connectResponseData[16];
+
+        socket.receive(boost::asio::buffer(&connectResponseData, 16));
+
+        const auto receivedConnectionId =
+            std::basic_string<unsigned char>{connectResponseData + 8, connectResponseData + 16};
+
+        const auto announceRequestMessage =
+            formatUdpAnnounceRequest({payload.infoHash, payload.peerId, payload.port, payload.uploaded,
+                                      payload.downloaded, payload.left, receivedConnectionId});
+
+        socket.send_to(boost::asio::buffer(announceRequestMessage), remoteEndpoint);
+
+        char announceResponseData[1024];
+
+        boost::asio::streambuf response;
+
+        const auto announceResponseBytesReceived = socket.receive(boost::asio::buffer(&announceResponseData, 1024));
+
+        const auto deserializedPeersEndpoints = responseDeserializer->deserializePeersEndpoints(
+            std::string{announceResponseData + 20, announceResponseData + announceResponseBytesReceived});
+
+        processPeersHandler(deserializedPeersEndpoints);
     }
-
-    if (peerEndpoints.empty())
+    else
     {
-        throw std::runtime_error{"No peer available"};
+        const auto queryParameters =
+            std::map<std::string, std::string>{{"info_hash", libs::encoder::HexEncoder::decode(payload.infoHash)},
+                                               {"peer_id", payload.peerId},
+                                               {"port", payload.port},
+                                               {"uploaded", payload.uploaded},
+                                               {"downloaded", payload.downloaded},
+                                               {"left", payload.left},
+                                               {"compact", payload.compact}};
+
+        const auto response = httpClient->get({payload.announceUrl, std::nullopt, queryParameters});
+
+        if (response.statusCode != 200)
+        {
+            return;
+        }
+
+        const auto deserializedResponse = responseDeserializer->deserializeBencode(response.data);
+
+        processPeersHandler(deserializedResponse.peersEndpoints);
     }
-
-    RetrievePeersResponse response{0, std::vector<PeerEndpoint>(peerEndpoints.begin(), peerEndpoints.end())};
-
-    return response;
 }
 
 namespace
@@ -206,7 +181,7 @@ std::string findHostInUrl(const std::string& url)
 
 std::string findPortNumberInUrl(const std::string& url)
 {
-    std::regex portExpression(":(\\d+)/");
+    std::regex portExpression(":(\\d+)");
 
     std::smatch portMatch;
 

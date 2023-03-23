@@ -12,6 +12,7 @@ class PeersRetriever
 public:
     virtual ~PeersRetriever() = default;
 
-    virtual RetrievePeersResponse retrievePeers(const RetrievePeersPayload& payload) = 0;
+    virtual void retrievePeers(const RetrievePeersPayload& payload,
+                               std::function<void(const std::vector<PeerEndpoint>&)> processPeersHandler) = 0;
 };
 }

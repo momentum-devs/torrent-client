@@ -1,5 +1,6 @@
 #include "PieceRepositoryImpl.h"
 
+#include <cmath>
 #include <utility>
 
 #include "fmt/core.h"
@@ -21,7 +22,7 @@ PieceRepositoryImpl::PieceRepositoryImpl(std::shared_ptr<libs::fileSystem::FileS
 {
     if (torrentFileInfo->nestedFilesInfo)
     {
-        long long lastFilePiece = 0;
+        long long bytesLengthSum = 0;
 
         for (auto nestedFileInfo : *torrentFileInfo->nestedFilesInfo)
         {
@@ -35,15 +36,20 @@ PieceRepositoryImpl::PieceRepositoryImpl(std::shared_ptr<libs::fileSystem::FileS
                 fileSystemService->write(absoluteDataFilePath, "");
             }
 
-            const unsigned int firstPiece = lastFilePiece;
+            const unsigned int firstPiece = bytesLengthSum / torrentFileInfo->pieceLength;
 
-            const unsigned int lastPiece = firstPiece + nestedFileInfo.length / torrentFileInfo->pieceLength;
+            const unsigned int firstPieceOffset = bytesLengthSum % torrentFileInfo->pieceLength;
 
-            const FilePieceInfo filePieceInfo{firstPiece, lastPiece, absoluteDataFilePath};
+            bytesLengthSum += nestedFileInfo.length;
+
+            const unsigned int lastPiece = bytesLengthSum / torrentFileInfo->pieceLength;
+
+            const unsigned int lastPieceOffset = bytesLengthSum % torrentFileInfo->pieceLength;
+
+            const FilePieceInfo filePieceInfo{firstPiece, firstPieceOffset, lastPiece, lastPieceOffset,
+                                              absoluteDataFilePath};
 
             filesInfo.push_back(filePieceInfo);
-
-            lastFilePiece = lastPiece;
         }
     }
     else
@@ -59,9 +65,14 @@ PieceRepositoryImpl::PieceRepositoryImpl(std::shared_ptr<libs::fileSystem::FileS
 
         const unsigned int firstPiece = 0;
 
+        const unsigned int firstPieceOffset = 0;
+
         const unsigned int lastPiece = torrentFileInfo->length / torrentFileInfo->pieceLength;
 
-        const FilePieceInfo filePieceInfo{firstPiece, lastPiece, absoluteDataFilePath};
+        const unsigned int lastPieceOffset = torrentFileInfo->length % torrentFileInfo->pieceLength;
+
+        const FilePieceInfo filePieceInfo{firstPiece, firstPieceOffset, lastPiece, lastPieceOffset,
+                                          absoluteDataFilePath};
 
         filesInfo.push_back(filePieceInfo);
     }
@@ -93,11 +104,56 @@ void PieceRepositoryImpl::save(unsigned int pieceId, const std::basic_string<uns
         return;
     }
 
-    const auto& fileInfo = getFileInfo(pieceId);
+    const auto filesInfo = getFileInfo(pieceId);
 
-    const auto position = (pieceId - fileInfo.firstPiece) * pieceSize;
+    for (const auto& fileInfo : filesInfo)
+    {
 
-    fileSystemService->writeAtPosition(fileInfo.filePath, data, position);
+        unsigned int position;
+
+        if (fileInfo.firstPiece != pieceId)
+        {
+            position = (pieceId - fileInfo.firstPiece) * pieceSize - fileInfo.firstPieceOffset;
+        }
+        else
+        {
+            position = 0;
+        }
+
+        unsigned int lowerDataBoundary;
+
+        if (fileInfo.firstPiece == pieceId)
+        {
+            lowerDataBoundary = fileInfo.firstPieceOffset;
+        }
+        else
+        {
+            lowerDataBoundary = 0;
+        }
+
+        unsigned int upperDataBoundary;
+
+        if (fileInfo.lastPiece == pieceId)
+        {
+            upperDataBoundary = fileInfo.lastPieceOffset;
+        }
+        else
+        {
+            upperDataBoundary = torrentFileInfo->pieceLength + 1;
+        }
+
+        if (lowerDataBoundary == 0 && upperDataBoundary == torrentFileInfo->pieceLength)
+        {
+            fileSystemService->writeAtPosition(fileInfo.filePath, data, position);
+        }
+        else
+        {
+            std::basic_string<unsigned char> dataToWrite{data.begin() + lowerDataBoundary,
+                                                         data.begin() + upperDataBoundary};
+
+            fileSystemService->writeAtPosition(fileInfo.filePath, dataToWrite, position);
+        }
+    }
 
     const auto metadataFilePosition = downloadedPiecesIds.size() * 4;
 
@@ -126,16 +182,23 @@ bool PieceRepositoryImpl::contains(unsigned int pieceId) const
     return std::any_of(piecesIds.cbegin(), piecesIds.cend(), [&](unsigned int id) { return id == pieceId; });
 }
 
-const FilePieceInfo& PieceRepositoryImpl::getFileInfo(unsigned int pieceId) const
+const std::vector<FilePieceInfo> PieceRepositoryImpl::getFileInfo(unsigned int pieceId) const
 {
-    for (std::size_t i = 0; i < filesInfo.size(); ++i)
+    std::vector<FilePieceInfo> filesToSave;
+    for (const auto& fileInfo : filesInfo)
     {
-        if (pieceId < filesInfo[i].lastPiece)
+        if (pieceId >= fileInfo.firstPiece && pieceId <= fileInfo.lastPiece)
         {
-            return filesInfo[i];
+            filesToSave.push_back(fileInfo);
         }
     }
 
-    throw std::out_of_range{fmt::format("PieceId out of range ({} out of {})", pieceId, filesInfo.end()->lastPiece)};
+    if (filesToSave.empty())
+    {
+        throw std::out_of_range{
+            fmt::format("PieceId out of range ({} out of {})", pieceId, filesInfo.end()->lastPiece)};
+    }
+
+    return filesToSave;
 }
 }

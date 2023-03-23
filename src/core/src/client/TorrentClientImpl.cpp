@@ -7,6 +7,7 @@
 
 #include "../session/HandshakeMessage.h"
 #include "../session/PeerToPeerSessionImpl.h"
+#include "../session/PeerToPeerSessionManager.h"
 #include "../session/PieceRepositoryImpl.h"
 #include "../session/PiecesSerializerImpl.h"
 #include "collection/ThreadSafeQueue.h"
@@ -18,12 +19,12 @@ TorrentClientImpl::TorrentClientImpl(std::shared_ptr<libs::fileSystem::FileSyste
                                      std::unique_ptr<TorrentFileDeserializer> torrentFileDeserializerInit,
                                      std::unique_ptr<libs::httpClient::HttpClient> httpClientInit,
                                      std::unique_ptr<AnnounceResponseDeserializer> responseDeserializerInit,
-                                     std::unique_ptr<PeersRetriever> peerRetrieverInit)
+                                     std::unique_ptr<PeersRetriever> peersRetrieverInit)
     : fileSystemService{std::move(fileSystemServiceInit)},
       torrentFileDeserializer{std::move(torrentFileDeserializerInit)},
       httpClient{std::move(httpClientInit)},
       responseDeserializer{std::move(responseDeserializerInit)},
-      peerRetriever{std::move(peerRetrieverInit)}
+      peersRetriever{std::move(peersRetrieverInit)}
 {
 }
 
@@ -51,11 +52,11 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     std::set<int> piecesIds{iotaData.begin(), iotaData.end()};
 
-    auto downloadedPiecesIds = pieceRepository->getDownloadedPieces();
+    const auto downloadedPiecesIds = pieceRepository->getDownloadedPieces();
 
-    for (auto pieceId : downloadedPiecesIds)
+    for (const auto pieceId : downloadedPiecesIds)
     {
-        piecesIds.erase(pieceId);
+        piecesIds.erase(static_cast<int>(pieceId));
     }
 
     auto piecesQueue = libs::collection::ThreadSafeQueue{std::vector(piecesIds.begin(), piecesIds.end())};
@@ -66,33 +67,16 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     const auto peerId = PeerIdGenerator::generate();
 
-    const auto retrievePeersPayload = RetrievePeersPayload{torrentFileInfo->announceList,
-                                                           torrentFileInfo->infoHash,
-                                                           peerId,
-                                                           "0",
-                                                           "0",
-                                                           "0",
-                                                           std::to_string(torrentFileInfo->length),
-                                                           "1"};
-
-    const auto response = peerRetriever->retrievePeers(retrievePeersPayload);
-
-    std::cout << fmt::format("Got list of {} peers.", response.peersEndpoints.size()) << std::endl;
-
     boost::asio::io_context context;
 
-    std::vector<std::unique_ptr<PeerToPeerSession>> sessions;
+    auto peerToPeerSessionManager = std::make_unique<PeerToPeerSessionManager>(
+        context, piecesQueue, peerId, torrentFileInfo, pieceRepository, std::move(peersRetriever));
 
-    for (const auto& peerEndpoint : response.peersEndpoints)
-    {
-        sessions.push_back(std::make_unique<PeerToPeerSessionImpl>(context, piecesQueue, peerEndpoint, peerId,
-                                                                   torrentFileInfo, pieceRepository));
-        sessions.back()->startSession();
-    }
+    peerToPeerSessionManager->startSessions();
 
     std::vector<std::thread> threads;
 
-    const auto numberOfSupportedThreads = response.peersEndpoints.size();
+    const auto numberOfSupportedThreads = 160;
 
     threads.reserve(numberOfSupportedThreads);
 
