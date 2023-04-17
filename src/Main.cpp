@@ -7,6 +7,7 @@ int main(int argc, char* argv[])
     loguru::g_preamble_date = false;
 
     loguru::init(argc, argv);
+    
     const auto arguments = CommandLineArgumentParser::parseArguments(argc, argv);
 
     const auto torrentClient = core::TorrentClientFactory::createTorrentClient();

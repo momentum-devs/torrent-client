@@ -1,7 +1,6 @@
 #include "PeerToPeerSessionImpl.h"
 
 #include <boost/beast/core/tcp_stream.hpp>
-#include <iostream>
 #include <optional>
 
 #include "fmt/format.h"
@@ -10,6 +9,7 @@
 #include "bytes/BytesConverter.h"
 #include "HandshakeMessageSerializer.h"
 #include "HashValidator.h"
+#include "loguru.hpp"
 #include "MessageSerializer.h"
 
 namespace core
@@ -59,7 +59,9 @@ void PeerToPeerSessionImpl::startSession()
         {
             if (error)
             {
-                std::cerr << "PeerConnectionError: " << error.message() << std::endl;
+                LOG_S(ERROR) << fmt::format("Cannot connect to {}:{}: ", endpoint.address().to_string(),
+                                            endpoint.port())
+                             << error.message();
 
                 hasErrorOccurred = true;
 
@@ -81,7 +83,8 @@ void PeerToPeerSessionImpl::sendHandshake(const HandshakeMessage& handshakeMessa
                {
                    if (error)
                    {
-                       std::cerr << error.message() << std::endl;
+                       LOG_S(ERROR) << "Error occurred while sending a handshake message to " << endpoint << ": "
+                                    << error.message();
 
                        hasErrorOccurred = true;
 
@@ -99,8 +102,6 @@ void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error)
 {
     if (error)
     {
-        std::cerr << endpoint << " : " << error.message() << std::endl;
-
         hasErrorOccurred = true;
 
         return;
@@ -112,16 +113,14 @@ void PeerToPeerSessionImpl::onReadHandshake(boost::system::error_code error)
 
     if (not HashValidator::compareHashes(torrentFileInfo->infoHash, receivedInfoHash))
     {
-        std::cerr << fmt::format("Receive handshake with different info hash, should be {}, get {}.",
-                                 torrentFileInfo->infoHash, receivedInfoHash)
-                  << std::endl;
+        LOG_S(ERROR) << "Received a handshake with different info hash from " << endpoint << ".";
 
         hasErrorOccurred = true;
 
         return;
     }
 
-    std::cout << "Read handshake from " << endpoint << std::endl;
+    LOG_S(INFO) << "Connected to " << endpoint << ".";
 
     asyncRead(4, [this](boost::system::error_code error, std::size_t bytes) { onReadMessageLength(error, bytes); });
 }
@@ -132,7 +131,7 @@ void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error,
     {
         returnPieceToQueue();
 
-        std::cerr << endpoint << " : " << error.message() << std::endl;
+        LOG_S(ERROR) << "Error occurred while reading message length from " << endpoint << ": " << error.message();
 
         hasErrorOccurred = true;
 
@@ -150,7 +149,7 @@ void PeerToPeerSessionImpl::onReadMessageLength(boost::system::error_code error,
     {
         returnPieceToQueue();
 
-        std::cerr << fmt::format("Message length {} not equal 4.", response.size()) << std::endl;
+        LOG_S(ERROR) << "Message length received from " << endpoint << " is not equal to 4.";
 
         hasErrorOccurred = true;
 
@@ -179,7 +178,8 @@ void PeerToPeerSessionImpl::onReadMessage(boost::system::error_code error, std::
     {
         returnPieceToQueue();
 
-        std::cerr << endpoint << ", " << *pieceIndex << " : " << error.message() << std::endl;
+        LOG_S(ERROR) << "Error occurred while reading piece " << *pieceIndex << " from " << endpoint << ": "
+                     << error.message();
 
         hasErrorOccurred = true;
 
@@ -252,7 +252,8 @@ void PeerToPeerSessionImpl::handleBitfieldMessage(const Message& bitfieldMessage
                    {
                        returnPieceToQueue();
 
-                       std::cerr << error.message() << std::endl;
+                       LOG_S(ERROR) << "Error occurred while sending interested message to " << endpoint << ": "
+                                    << error.message();
 
                        hasErrorOccurred = true;
 
@@ -280,7 +281,7 @@ void PeerToPeerSessionImpl::handleUnchokeMessage()
 
         if (!pieceIndex)
         {
-            std::cout << "No piece in queue - close connection" << std::endl;
+            LOG_S(INFO) << "No pieces in queue, closing connection with " << endpoint << "...";
 
             return;
         }
@@ -297,7 +298,7 @@ void PeerToPeerSessionImpl::handleUnchokeMessage()
 
     if (piecesIndexIter == numberOfPiecesIndexes)
     {
-        std::cout << "No piece in queue available - close connection" << std::endl;
+        LOG_S(INFO) << "No pieces in queue, closing connection with " << endpoint << "...";
 
         return;
     }
@@ -316,7 +317,8 @@ void PeerToPeerSessionImpl::handleUnchokeMessage()
                    {
                        returnPieceToQueue();
 
-                       std::cerr << error.message() << std::endl;
+                       LOG_S(ERROR) << "Error occurred while sending request message to " << endpoint << ": "
+                                    << error.message();
 
                        hasErrorOccurred = true;
 
@@ -341,6 +343,7 @@ void PeerToPeerSessionImpl::handlePieceMessage(const Message& pieceMessage)
     pieceData += pieceMessage.payload.substr(8, pieceMessage.payload.size() - 8);
 
     auto lastPiece = this->torrentFileInfo->piecesHashes.size() - 1;
+
     auto lastPieceSize = torrentFileInfo->length % torrentFileInfo->pieceLength;
 
     if (pieceBytesRead >= torrentFileInfo->pieceLength ||
@@ -354,16 +357,16 @@ void PeerToPeerSessionImpl::handlePieceMessage(const Message& pieceMessage)
         {
             pieceRepository->save(blockPieceIndex, pieceData);
 
-            std::cout << "Piece with number " << blockPieceIndex << " downloaded from " << endpoint
-                      << fmt::format("({}/{})", pieceRepository->getDownloadedPieces().size(),
-                                     torrentFileInfo->piecesHashes.size())
-                      << std::endl;
+            LOG_S(INFO) << "Piece " << blockPieceIndex << " downloaded from " << endpoint
+                        << fmt::format(" ({}/{})", pieceRepository->getDownloadedPieces().size(),
+                                       torrentFileInfo->piecesHashes.size());
         }
         else
         {
-            returnPieceToQueue();
+            LOG_S(ERROR) << "Piece  " << blockPieceIndex << " received from" << endpoint
+                         << " has invalid hash, pushing piece index back to the queue...";
 
-            std::cerr << "Piece " << blockPieceIndex << " hash not valid, push this index to queue again!" << std::endl;
+            returnPieceToQueue();
         }
 
         pieceData.clear();
@@ -374,7 +377,7 @@ void PeerToPeerSessionImpl::handlePieceMessage(const Message& pieceMessage)
 
             if (!pieceIndex)
             {
-                std::cout << "No piece in queue - close connection" << std::endl;
+                LOG_S(INFO) << "No pieces in queue available, closing connection with peer " << endpoint << "...";
 
                 hasErrorOccurred = true;
 
@@ -393,7 +396,7 @@ void PeerToPeerSessionImpl::handlePieceMessage(const Message& pieceMessage)
 
         if (piecesIndexIter == numberOfPiecesIndexes)
         {
-            std::cout << "No piece in queue available - close connection" << std::endl;
+            LOG_S(INFO) << "No pieces in queue available, closing connection with peer " << endpoint << "...";
 
             hasErrorOccurred = true;
 
@@ -421,7 +424,8 @@ void PeerToPeerSessionImpl::handlePieceMessage(const Message& pieceMessage)
                    {
                        returnPieceToQueue();
 
-                       std::cerr << error.message() << std::endl;
+                       LOG_S(ERROR) << "Error occurred while sending request message to " << endpoint << ": "
+                                    << error.message();
 
                        hasErrorOccurred = true;
 
@@ -494,7 +498,7 @@ void PeerToPeerSessionImpl::checkDeadline()
 
         hasErrorOccurred = true;
 
-        std::cerr << endpoint << ": timeout" << std::endl;
+        LOG_S(ERROR) << "Connection with " << endpoint << " ended with timeout.";
 
         returnPieceToQueue();
     }

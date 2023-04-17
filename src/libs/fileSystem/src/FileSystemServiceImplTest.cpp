@@ -92,8 +92,6 @@ TEST_F(FileSystemServiceImplTest, givenNestedPath_shouldCreateFileWithSubdirecto
     if (fileSystemService.exists(nestedFilePath))
         fileSystemService.remove(nestedFilePath);
 
-    std::cout << nestedFilePath << std::endl;
-
     fileSystemService.write(nestedFilePath, "");
 
     ASSERT_TRUE(fileSystemService.exists(nestedFilePath));

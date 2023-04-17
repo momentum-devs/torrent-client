@@ -37,9 +37,12 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     const auto numberOfPieces = static_cast<unsigned>(torrentFileInfo->piecesHashes.size());
 
+    const auto numberOfFilesToDownload = torrentFileInfo->nestedFilesInfo->size();
+
+    LOG_S(INFO) << fmt::format("Number of files to download: {}.", numberOfFilesToDownload);
+
     LOG_S(INFO) << fmt::format("File has {} pieces, each piece has {} bytes.", numberOfPieces,
-                               torrentFileInfo->pieceLength)
-                << std::endl;
+                               torrentFileInfo->pieceLength);
 
     std::shared_ptr<core::PiecesSerializer> piecesSerializer = std::make_shared<core::PiecesSerializerImpl>();
 
@@ -61,9 +64,8 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     auto piecesQueue = libs::collection::ThreadSafeQueue{std::vector(piecesIds.begin(), piecesIds.end())};
 
-    std::cout << fmt::format("Already downloaded {} out of {} pieces, left {} pieces to download",
-                             downloadedPiecesIds.size(), numberOfPieces, piecesQueue.size())
-              << std::endl;
+    LOG_S(INFO) << fmt::format("Already downloaded {} out of {} pieces, left {} pieces to download",
+                               downloadedPiecesIds.size(), numberOfPieces, piecesQueue.size());
 
     const auto peerId = PeerIdGenerator::generate();
 
@@ -95,11 +97,11 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     if (piecesQueue.empty())
     {
-        std::cout << "Torrent downloaded successfully" << std::endl;
+        LOG_S(INFO) << "Torrent downloaded successfully";
     }
     else
     {
-        std::cout << "There left " << piecesQueue.size() << " pieces to download" << std::endl;
+        LOG_S(INFO) << "There left " << piecesQueue.size() << " pieces to download";
     }
 }
 }

@@ -1,7 +1,8 @@
 #include "CommandLineArgumentParser.h"
 
 #include <boost/program_options.hpp>
-#include <iostream>
+
+#include "loguru.hpp"
 
 CommandLineArguments CommandLineArgumentParser::parseArguments(int argc, char** argv)
 {
@@ -23,15 +24,14 @@ CommandLineArguments CommandLineArgumentParser::parseArguments(int argc, char** 
 
     if (!variablesMap.count("torrent_file"))
     {
-        std::cerr << "put argument: torrent_file, t - path to torrent file to download" << std::endl;
+        LOG_S(FATAL) << "Missing argument: torrent_file, t - path to torrent file to download.";
 
         throw std::runtime_error("Torrent file argument not provided.");
     }
 
     if (!variablesMap.count("destination_directory"))
     {
-        std::cerr << "put argument: destination_directory, d - path to directory where file(s) will be saved"
-                  << std::endl;
+        LOG_S(FATAL) << "Missing argument: destination_directory, d - path to directory where file(s) will be saved.";
 
         throw std::runtime_error("Destination directory argument not provided.");
     }

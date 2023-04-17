@@ -29,8 +29,6 @@ PieceRepositoryImpl::PieceRepositoryImpl(std::shared_ptr<libs::fileSystem::FileS
             auto absoluteDataFilePath =
                 fmt::format("{}/{}/{}", destinationDirectory, torrentFileInfo->name, nestedFileInfo.name);
 
-            std::cout << absoluteDataFilePath << std::endl;
-
             if (not fileSystemService->exists(absoluteDataFilePath))
             {
                 fileSystemService->write(absoluteDataFilePath, "");
@@ -55,8 +53,6 @@ PieceRepositoryImpl::PieceRepositoryImpl(std::shared_ptr<libs::fileSystem::FileS
     else
     {
         auto absoluteDataFilePath = fmt::format("{}/{}", destinationDirectory, torrentFileInfo->name);
-
-        std::cout << absoluteDataFilePath << std::endl;
 
         if (not fileSystemService->exists(absoluteDataFilePath))
         {

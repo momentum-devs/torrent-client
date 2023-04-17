@@ -4,11 +4,11 @@
 
 #include "fmt/format.h"
 
+#include "loguru.hpp"
 #include "PeerToPeerSessionImpl.h"
 
 namespace core
 {
-
 namespace
 {
 const int refreshPeersTimeInSeconds{300};
@@ -75,7 +75,7 @@ void PeerToPeerSessionManager::handleReceivedPeers(const std::vector<PeerEndpoin
 {
     std::lock_guard<std::mutex> guard(lock);
 
-    std::cout << fmt::format("Got list of {} peers.", peersEndpoints.size()) << std::endl;
+    LOG_S(INFO) << fmt::format("Received a list with {} peers.", peersEndpoints.size());
 
     for (const auto& peerEndpoint : peersEndpoints)
     {

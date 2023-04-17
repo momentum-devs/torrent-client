@@ -16,7 +16,6 @@ void FileSystemServiceImpl::write(const std::string& absolutePath, const std::st
 {
     if (not exists(getParentDirectory(absolutePath)))
     {
-        std::cout << absolutePath << std::endl;
         createDirectory(getParentDirectory(absolutePath));
     }
 

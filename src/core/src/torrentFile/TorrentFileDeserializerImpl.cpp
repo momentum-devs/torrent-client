@@ -8,6 +8,7 @@
 #include "errors/InvalidBencodeFormatError.h"
 #include "errors/MissingBencodeDictionary.h"
 #include "errors/MissingBencodeFieldValue.h"
+#include "loguru.hpp"
 #include "TorrentFileInfo.h"
 
 namespace core
@@ -157,7 +158,7 @@ bencode::data parseBencode(const std::string& bencodeText)
     }
     catch (const std::exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        LOG_S(ERROR) << e.what();
 
         throw errors::InvalidBencodeFormatError(e.what());
     }
@@ -171,7 +172,7 @@ bencode::dict getDictionary(const bencode::data& data)
     }
     catch (const std::exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        LOG_S(ERROR) << e.what();
 
         throw errors::MissingBencodeDictionary{"Missing dictionary."};
     }
@@ -186,7 +187,7 @@ T getFieldValue(const bencode::dict& bencodeDictionary, const std::string& field
     }
     catch (const std::exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        LOG_S(ERROR) << e.what();
 
         throw errors::MissingBencodeFieldValue{fmt::format("Missing {} field.", fieldName)};
     }
@@ -214,7 +215,7 @@ bencode::data getFieldValue<bencode::data>(const bencode::dict& bencodeDictionar
     }
     catch (const std::exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        LOG_S(ERROR) << e.what();
 
         throw errors::MissingBencodeFieldValue{fmt::format("Missing {} field.", fieldName)};
     }

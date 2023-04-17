@@ -30,8 +30,6 @@ TEST_F(AnnounceResponseDeserializerImplTest, deserializeBencode)
 {
     auto deserializedResponse = deserializer.deserializeBencode(validAnnounceResponseFileContent);
 
-    std::cout << deserializedResponse;
-
     ASSERT_EQ(deserializedResponse.interval, 900);
     ASSERT_EQ(deserializedResponse.peersEndpoints.size(), 50);
     ASSERT_EQ(deserializedResponse.peersEndpoints[0], peerEndpoint);
