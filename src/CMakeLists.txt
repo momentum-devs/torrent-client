@@ -10,4 +10,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         ${Boost_INCLUDE_DIR}
         ${BENCODE_INCLUDE_DIR})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC core fmt::fmt ${Boost_LIBRARIES} collection fileSystem httpClient)
+target_link_libraries(${PROJECT_NAME} PRIVATE core fmt::fmt ${Boost_LIBRARIES} collection fileSystem httpClient loguru::loguru)

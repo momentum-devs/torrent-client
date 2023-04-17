@@ -7,10 +7,10 @@
 
 #include "../session/HandshakeMessage.h"
 #include "../session/PeerToPeerSessionImpl.h"
-#include "../session/PeerToPeerSessionManager.h"
 #include "../session/PieceRepositoryImpl.h"
 #include "../session/PiecesSerializerImpl.h"
 #include "collection/ThreadSafeQueue.h"
+#include "loguru.hpp"
 #include "PeerIdGenerator.h"
 
 namespace core
@@ -37,9 +37,9 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     const auto numberOfPieces = static_cast<unsigned>(torrentFileInfo->piecesHashes.size());
 
-    std::cout << fmt::format("File has {} pieces, each piece has {} bytes.", numberOfPieces,
-                             torrentFileInfo->pieceLength)
-              << std::endl;
+    LOG_S(INFO) << fmt::format("File has {} pieces, each piece has {} bytes.", numberOfPieces,
+                               torrentFileInfo->pieceLength)
+                << std::endl;
 
     std::shared_ptr<core::PiecesSerializer> piecesSerializer = std::make_shared<core::PiecesSerializerImpl>();
 

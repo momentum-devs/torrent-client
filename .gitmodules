@@ -13,3 +13,6 @@
 [submodule "externals/json"]
 	path = externals/json
 	url = https://github.com/nlohmann/json
+[submodule "externals/loguru"]
+	path = externals/loguru
+	url = https://github.com/emilk/loguru.git

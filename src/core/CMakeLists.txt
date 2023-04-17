@@ -44,7 +44,7 @@ target_include_directories(coreUT PRIVATE
         ${JSON_INCLUDE_DIR}
         )
 
-target_link_libraries(core PRIVATE collection fileSystem httpClient encoder bytes random fmt)
-target_link_libraries(coreUT PRIVATE collection fileSystem httpClient encoder bytes fmt random gtest_main gmock_main)
+target_link_libraries(core PRIVATE collection fileSystem httpClient encoder bytes random fmt loguru::loguru)
+target_link_libraries(coreUT PRIVATE collection fileSystem httpClient encoder bytes fmt random gtest_main gmock_main loguru::loguru)
 
 add_test(coreUT coreUT --gtest_color=yes)
