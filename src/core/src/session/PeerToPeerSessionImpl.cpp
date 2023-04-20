@@ -16,18 +16,18 @@ namespace core
 {
 namespace
 {
-const int timeoutInSeconds{100};
+const int timeoutInSeconds{10};
 const int maxBlockSize{16384};
 }
 
 PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
-                                             libs::collection::ThreadSafeQueue<int>& piecesQueueInit,
+                                             PieceQueueManager& piecesQueueManagerInit,
                                              const PeerEndpoint& peerEndpointInit, std::string peerIdInit,
                                              const std::shared_ptr<TorrentFileInfo>& torrentFileInfoInit,
                                              const std::shared_ptr<PieceRepository> pieceRepositoryInit,
                                              PeerToPeerSessionManager& managerInit)
     : socket(ioContext),
-      piecesQueue{piecesQueueInit},
+      piecesQueueManager{piecesQueueManagerInit},
       peerEndpoint{peerEndpointInit},
       peerId{std::move(peerIdInit)},
       isChoked{true},
@@ -39,7 +39,9 @@ PeerToPeerSessionImpl::PeerToPeerSessionImpl(boost::asio::io_context& ioContext,
       bitfield{std::nullopt},
       pieceData{},
       deadline(ioContext),
+      refreshPieceIdTimer{ioContext},
       sessionManager{managerInit}
+
 {
 }
 
@@ -271,37 +273,7 @@ void PeerToPeerSessionImpl::handleUnchokeMessage()
 
     isChoked = false;
 
-    auto numberOfPiecesIndexes = static_cast<int>(piecesQueue.size());
-
-    auto piecesIndexIter = 0;
-
-    for (; piecesIndexIter < numberOfPiecesIndexes; ++piecesIndexIter)
-    {
-        pieceIndex = piecesQueue.pop();
-
-        if (!pieceIndex)
-        {
-            LOG_S(INFO) << "No pieces in queue, closing connection with " << endpoint << "...";
-
-            return;
-        }
-
-        if (bitfield->hasBitSet(*pieceIndex))
-        {
-            break;
-        }
-        else
-        {
-            piecesQueue.push(*pieceIndex);
-        }
-    }
-
-    if (piecesIndexIter == numberOfPiecesIndexes)
-    {
-        LOG_S(INFO) << "No pieces in queue, closing connection with " << endpoint << "...";
-
-        return;
-    }
+    getPieceToDownload();
 
     const auto requestMessage =
         Message{MessageId::Request, libs::bytes::BytesConverter::int32ToBytes(*pieceIndex) +
@@ -349,66 +321,62 @@ void PeerToPeerSessionImpl::handlePieceMessage(const Message& pieceMessage)
     if (pieceBytesRead >= torrentFileInfo->pieceLength ||
         ((*pieceIndex == lastPiece) && (pieceBytesRead >= lastPieceSize)))
     {
-        auto numberOfPiecesIndexes = static_cast<int>(piecesQueue.size());
+        bool isValidHash =
+            HashValidator::compareHashWithData(torrentFileInfo->piecesHashes[blockPieceIndex], pieceData);
 
-        auto piecesIndexIter = 0;
+        if ((*pieceIndex == lastPiece) && (pieceBytesRead >= lastPieceSize) && not isValidHash)
+        {
+            LOG_S(INFO) << "Zero padding bytes in last piece...";
+            for (int i = pieceData.size(); i < torrentFileInfo->pieceLength; i++)
+            {
+                pieceData += static_cast<unsigned char>(0);
+            }
 
-        if (HashValidator::compareHashWithData(torrentFileInfo->piecesHashes[blockPieceIndex], pieceData))
+            isValidHash = HashValidator::compareHashWithData(torrentFileInfo->piecesHashes[blockPieceIndex], pieceData);
+        }
+
+        if (isValidHash)
         {
             pieceRepository->save(blockPieceIndex, pieceData);
 
             LOG_S(INFO) << "Piece " << blockPieceIndex << " downloaded from " << endpoint
                         << fmt::format(" ({}/{})", pieceRepository->getDownloadedPieces().size(),
                                        torrentFileInfo->piecesHashes.size());
+
+            pieceIndex = std::nullopt;
+
+            if (pieceRepository->getDownloadedPieces().size() == torrentFileInfo->piecesHashes.size())
+            {
+                LOG_S(INFO) << "Successfully downloaded torrent file(s).";
+
+                exit(0);
+            }
         }
         else
         {
             LOG_S(ERROR) << "Piece  " << blockPieceIndex << " received from" << endpoint
                          << " has invalid hash, pushing piece index back to the queue...";
 
+            hasErrorOccurred = true;
+
             returnPieceToQueue();
         }
 
         pieceData.clear();
 
-        for (; piecesIndexIter < numberOfPiecesIndexes; ++piecesIndexIter)
-        {
-            pieceIndex = piecesQueue.pop();
-
-            if (!pieceIndex)
-            {
-                LOG_S(INFO) << "No pieces in queue available, closing connection with peer " << endpoint << "...";
-
-                hasErrorOccurred = true;
-
-                return;
-            }
-
-            if (bitfield->hasBitSet(*pieceIndex))
-            {
-                break;
-            }
-            else
-            {
-                piecesQueue.push(*pieceIndex);
-            }
-        }
-
-        if (piecesIndexIter == numberOfPiecesIndexes)
-        {
-            LOG_S(INFO) << "No pieces in queue available, closing connection with peer " << endpoint << "...";
-
-            hasErrorOccurred = true;
-
-            return;
-        }
+        getPieceToDownload();
 
         pieceBytesRead = 0;
     }
 
-    const auto byteToRequest = (torrentFileInfo->pieceLength - pieceBytesRead < maxBlockSize) ?
-                                   torrentFileInfo->pieceLength - pieceBytesRead :
-                                   maxBlockSize;
+    auto byteToRequest = (torrentFileInfo->pieceLength - pieceBytesRead < maxBlockSize) ?
+                             torrentFileInfo->pieceLength - pieceBytesRead :
+                             maxBlockSize;
+
+    if (lastPiece == *pieceIndex && lastPieceSize - pieceBytesRead < maxBlockSize)
+    {
+        byteToRequest = lastPieceSize - pieceBytesRead;
+    }
 
     const auto requestMessage =
         Message{MessageId::Request, libs::bytes::BytesConverter::int32ToBytes(*pieceIndex) +
@@ -445,7 +413,7 @@ void PeerToPeerSessionImpl::returnPieceToQueue()
 {
     if (pieceIndex)
     {
-        piecesQueue.push(pieceIndex.value());
+        piecesQueueManager.addPieceIdoQueue(pieceIndex.value());
 
         pieceIndex = std::nullopt;
 
@@ -508,4 +476,20 @@ void PeerToPeerSessionImpl::checkDeadline()
     }
 }
 
+void PeerToPeerSessionImpl::getPieceToDownload()
+{
+    pieceIndex = piecesQueueManager.getPieceIdFromQueue();
+
+    if (pieceIndex != std::nullopt)
+    {
+        if (bitfield->hasBitSet(*pieceIndex))
+        {
+            return;
+        }
+    }
+
+    deadline.expires_from_now(boost::posix_time::seconds(timeoutInSeconds));
+    refreshPieceIdTimer.expires_from_now(boost::posix_time::seconds(timeoutInSeconds));
+    refreshPieceIdTimer.async_wait([this](boost::system::error_code) { getPieceToDownload(); });
+}
 }

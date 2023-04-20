@@ -2,7 +2,6 @@
 #include "gtest/gtest.h"
 
 #include "fileSystem/FileSystemServiceMock.h"
-#include "PiecesSerializerMock.h"
 
 #include "PieceRepositoryImpl.h"
 
@@ -42,14 +41,12 @@ public:
 
     std::shared_ptr<libs::fileSystem::FileSystemServiceMock> fileSystemService =
         std::make_shared<StrictMock<libs::fileSystem::FileSystemServiceMock>>();
-    std::shared_ptr<PiecesSerializerMock> piecesSerializer = std::make_shared<StrictMock<PiecesSerializerMock>>();
 };
 
 class PieceRepositoryImplSingleFileTest : public PieceRepositoryImplSingleFileTest_Base
 {
 public:
-    PieceRepositoryImpl repository{fileSystemService, piecesSerializer, pieceSize, torrentFileInfo,
-                                   destinationDirectory};
+    PieceRepositoryImpl repository{fileSystemService, pieceSize, torrentFileInfo, destinationDirectory};
 };
 
 TEST_F(PieceRepositoryImplSingleFileTest, givenExistingPieceId_shouldNotSave)
@@ -58,7 +55,6 @@ TEST_F(PieceRepositoryImplSingleFileTest, givenExistingPieceId_shouldNotSave)
     const std::basic_string<unsigned char> data{reinterpret_cast<const unsigned char*>("data")};
 
     EXPECT_CALL(*fileSystemService, read(metadataFilePath)).WillOnce(Return(serializedPiecesIds));
-    EXPECT_CALL(*piecesSerializer, deserialize(serializedPiecesIds)).WillOnce(Return(piecesIds));
 
     repository.save(pieceId, data);
 }
@@ -69,9 +65,7 @@ TEST_F(PieceRepositoryImplSingleFileTest, givenNotExistingPieceId_shouldSave)
     const std::basic_string<unsigned char> data{reinterpret_cast<const unsigned char*>("data")};
 
     EXPECT_CALL(*fileSystemService, read(metadataFilePath)).WillOnce(Return(serializedPiecesIds));
-    EXPECT_CALL(*piecesSerializer, deserialize(serializedPiecesIds)).WillOnce(Return(piecesIds));
     EXPECT_CALL(*fileSystemService, writeAtPosition(filePath, data, pieceId * pieceSize));
-    EXPECT_CALL(*piecesSerializer, serialize(updatedPiecesIds)).WillOnce(Return(serializedUpdatedPiecesIds));
     EXPECT_CALL(*fileSystemService, write(metadataFilePath, serializedUpdatedPiecesIds));
 
     repository.save(pieceId, data);
@@ -80,7 +74,6 @@ TEST_F(PieceRepositoryImplSingleFileTest, givenNotExistingPieceId_shouldSave)
 TEST_F(PieceRepositoryImplSingleFileTest, getDownloadedPieces)
 {
     EXPECT_CALL(*fileSystemService, read(metadataFilePath)).WillOnce(Return(serializedPiecesIds));
-    EXPECT_CALL(*piecesSerializer, deserialize(serializedPiecesIds)).WillOnce(Return(piecesIds));
 
     const auto allPiecesIds = repository.getDownloadedPieces();
 
@@ -90,7 +83,6 @@ TEST_F(PieceRepositoryImplSingleFileTest, getDownloadedPieces)
 TEST_F(PieceRepositoryImplSingleFileTest, givenExistingPieceId_shouldReturnTrue)
 {
     EXPECT_CALL(*fileSystemService, read(metadataFilePath)).WillOnce(Return(serializedPiecesIds));
-    EXPECT_CALL(*piecesSerializer, deserialize(serializedPiecesIds)).WillOnce(Return(piecesIds));
 
     const auto containsPieceId = repository.contains(10);
 
@@ -100,7 +92,6 @@ TEST_F(PieceRepositoryImplSingleFileTest, givenExistingPieceId_shouldReturnTrue)
 TEST_F(PieceRepositoryImplSingleFileTest, givenNotExistingPieceId_shouldReturnFalse)
 {
     EXPECT_CALL(*fileSystemService, read(metadataFilePath)).WillOnce(Return(serializedPiecesIds));
-    EXPECT_CALL(*piecesSerializer, deserialize(serializedPiecesIds)).WillOnce(Return(piecesIds));
 
     const auto containsPieceId = repository.contains(5);
 
@@ -112,6 +103,5 @@ TEST_F(PieceRepositoryImplSingleFileTest, givenPieceIdOutOfRange_shouldThrow)
     const std::basic_string<unsigned char> data{reinterpret_cast<const unsigned char*>("data")};
 
     EXPECT_CALL(*fileSystemService, read(metadataFilePath)).WillOnce(Return(serializedPiecesIds));
-    EXPECT_CALL(*piecesSerializer, deserialize(serializedPiecesIds)).WillOnce(Return(piecesIds));
     EXPECT_THROW(repository.save(invalidPieceId, data), std::out_of_range);
 }

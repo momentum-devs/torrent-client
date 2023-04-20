@@ -37,7 +37,6 @@ public:
 
     std::optional<T> pop()
     {
-        std::lock_guard<std::mutex> guard(lock);
 
         if (not queue.empty())
         {

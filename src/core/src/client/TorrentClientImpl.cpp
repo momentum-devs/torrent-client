@@ -5,10 +5,9 @@
 
 #include "fmt/format.h"
 
-#include "../session/HandshakeMessage.h"
 #include "../session/PeerToPeerSessionImpl.h"
+#include "../session/PieceQueueManager.h"
 #include "../session/PieceRepositoryImpl.h"
-#include "../session/PiecesSerializerImpl.h"
 #include "collection/ThreadSafeQueue.h"
 #include "loguru.hpp"
 #include "PeerIdGenerator.h"
@@ -37,17 +36,16 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     const auto numberOfPieces = static_cast<unsigned>(torrentFileInfo->piecesHashes.size());
 
-    const auto numberOfFilesToDownload = torrentFileInfo->nestedFilesInfo->size();
+    const auto numberOfFilesToDownload =
+        torrentFileInfo->nestedFilesInfo ? torrentFileInfo->nestedFilesInfo->size() : 1;
 
     LOG_S(INFO) << fmt::format("Number of files to download: {}.", numberOfFilesToDownload);
 
     LOG_S(INFO) << fmt::format("File has {} pieces, each piece has {} bytes.", numberOfPieces,
                                torrentFileInfo->pieceLength);
 
-    std::shared_ptr<core::PiecesSerializer> piecesSerializer = std::make_shared<core::PiecesSerializerImpl>();
-
     std::shared_ptr<core::PieceRepository> pieceRepository = std::make_shared<core::PieceRepositoryImpl>(
-        fileSystemService, piecesSerializer, torrentFileInfo->pieceLength, torrentFileInfo, destinationDirectory);
+        fileSystemService, torrentFileInfo->pieceLength, torrentFileInfo, destinationDirectory);
 
     std::vector<int> iotaData(numberOfPieces);
 
@@ -64,6 +62,15 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
 
     auto piecesQueue = libs::collection::ThreadSafeQueue{std::vector(piecesIds.begin(), piecesIds.end())};
 
+    PieceQueueManager pieceQueueManager{piecesQueue};
+
+    if (piecesQueue.empty())
+    {
+        LOG_S(INFO) << "Torrent file(s) are already downloaded.";
+
+        return;
+    }
+
     LOG_S(INFO) << fmt::format("Already downloaded {} out of {} pieces, left {} pieces to download",
                                downloadedPiecesIds.size(), numberOfPieces, piecesQueue.size());
 
@@ -72,13 +79,13 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
     boost::asio::io_context context;
 
     auto peerToPeerSessionManager = std::make_unique<PeerToPeerSessionManager>(
-        context, piecesQueue, peerId, torrentFileInfo, pieceRepository, std::move(peersRetriever));
+        context, pieceQueueManager, peerId, torrentFileInfo, pieceRepository, std::move(peersRetriever));
 
     peerToPeerSessionManager->startSessions();
 
     std::vector<std::thread> threads;
 
-    const auto numberOfSupportedThreads = 160;
+    const auto numberOfSupportedThreads = 1000;
 
     threads.reserve(numberOfSupportedThreads);
 
@@ -93,15 +100,6 @@ void TorrentClientImpl::download(const std::string& torrentFilePath, const std::
         {
             thread.join();
         }
-    }
-
-    if (piecesQueue.empty())
-    {
-        LOG_S(INFO) << "Torrent downloaded successfully";
-    }
-    else
-    {
-        LOG_S(INFO) << "There left " << piecesQueue.size() << " pieces to download";
     }
 }
 }

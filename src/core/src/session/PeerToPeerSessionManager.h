@@ -11,6 +11,7 @@
 #include "../tracker/PeersRetriever.h"
 #include "collection/ThreadSafeQueue.h"
 #include "PeerToPeerSession.h"
+#include "PieceQueueManager.h"
 #include "PieceRepository.h"
 
 namespace core
@@ -18,8 +19,8 @@ namespace core
 class PeerToPeerSessionManager
 {
 public:
-    PeerToPeerSessionManager(boost::asio::io_context& ioContext, libs::collection::ThreadSafeQueue<int>&,
-                             std::string peerId, std::shared_ptr<TorrentFileInfo> torrentFileInfo,
+    PeerToPeerSessionManager(boost::asio::io_context& ioContext, PieceQueueManager&, std::string peerId,
+                             std::shared_ptr<TorrentFileInfo> torrentFileInfo,
                              std::shared_ptr<PieceRepository> pieceRepository,
                              std::unique_ptr<PeersRetriever> peerRetriever);
 
@@ -32,7 +33,7 @@ private:
     void checkDeadline();
 
     boost::asio::io_context& context;
-    libs::collection::ThreadSafeQueue<int>& piecesQueue;
+    PieceQueueManager& piecesQueueManager;
     const std::string peerId;
     const std::shared_ptr<TorrentFileInfo> torrentFileInfo;
     const std::shared_ptr<PieceRepository> pieceRepository;

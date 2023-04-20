@@ -6,19 +6,19 @@ Bitfield::Bitfield(const std::basic_string<unsigned char>& dataInit) : data{init
 
 bool Bitfield::hasBitSet(unsigned int bitIndex) const
 {
-    return data.at(bitIndex);
-}
-
-std::string Bitfield::toString() const
-{
-    std::string dataAsString;
-
-    for (const auto& bit : data)
+    if (bitIndex >= data.size())
     {
-        dataAsString += std::to_string(static_cast<int>(bit));
+        return false;
     }
 
-    return dataAsString;
+    try
+    {
+        return data.at(bitIndex);
+    }
+    catch (const std::exception& error)
+    {
+        return false;
+    }
 }
 
 std::size_t Bitfield::size() const

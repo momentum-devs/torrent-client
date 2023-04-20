@@ -4,9 +4,9 @@
 
 struct FilePieceInfo
 {
-    unsigned int firstPiece;
+    unsigned int firstPieceId;
     unsigned int firstPieceOffset;
-    unsigned int lastPiece;
+    unsigned int lastPieceId;
     unsigned int lastPieceOffset;
     std::string filePath;
 };

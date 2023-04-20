@@ -8,10 +8,11 @@ set(SOURCES
         src/session/MessageSerializer.cpp
         src/session/PieceRepositoryImpl.cpp
         src/client/TorrentClientImpl.cpp
-        src/session/PiecesSerializerImpl.cpp
         src/session/HashValidator.cpp
         src/client/TorrentClientFactory.cpp
-        src/session/PeerToPeerSessionManager.cpp)
+        src/session/PeerToPeerSessionManager.cpp
+        src/session/PieceQueueManager.cpp
+        )
 
 set(UT_SOURCES
         src/torrentFile/TorrentFileDeserializerImplTest.cpp
@@ -21,7 +22,6 @@ set(UT_SOURCES
         src/session/HashValidatorTest.cpp
         src/session/PieceRepositoryImplSingleFileTest.cpp
         src/session/PieceRepositoryImplMultiFileTest.cpp
-        src/session/PiecesSerializerImplTest.cpp
         )
 
 add_library(core ${SOURCES})

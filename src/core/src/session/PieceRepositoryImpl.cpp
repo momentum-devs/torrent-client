@@ -10,12 +10,10 @@
 namespace core
 {
 PieceRepositoryImpl::PieceRepositoryImpl(std::shared_ptr<libs::fileSystem::FileSystemService> fileSystemServiceInit,
-                                         std::shared_ptr<PiecesSerializer> piecesSerializerInit,
                                          unsigned int pieceSizeInit,
                                          std::shared_ptr<TorrentFileInfo> torrentFileInfoInit,
                                          const std::string& destinationDirectory)
     : fileSystemService{std::move(fileSystemServiceInit)},
-      piecesSerializer{std::move(piecesSerializerInit)},
       pieceSize{pieceSizeInit},
       torrentFileInfo{std::move(torrentFileInfoInit)},
       absoluteMetadataFilePath{fmt::format("{}/{}.metadata", destinationDirectory, torrentFileInfo->name)}
@@ -47,7 +45,7 @@ PieceRepositoryImpl::PieceRepositoryImpl(std::shared_ptr<libs::fileSystem::FileS
             const FilePieceInfo filePieceInfo{firstPiece, firstPieceOffset, lastPiece, lastPieceOffset,
                                               absoluteDataFilePath};
 
-            filesInfo.push_back(filePieceInfo);
+            allFilesInfo.push_back(filePieceInfo);
         }
     }
     else
@@ -70,7 +68,7 @@ PieceRepositoryImpl::PieceRepositoryImpl(std::shared_ptr<libs::fileSystem::FileS
         const FilePieceInfo filePieceInfo{firstPiece, firstPieceOffset, lastPiece, lastPieceOffset,
                                           absoluteDataFilePath};
 
-        filesInfo.push_back(filePieceInfo);
+        allFilesInfo.push_back(filePieceInfo);
     }
 
     if (not fileSystemService->exists(absoluteMetadataFilePath))
@@ -100,16 +98,16 @@ void PieceRepositoryImpl::save(unsigned int pieceId, const std::basic_string<uns
         return;
     }
 
-    const auto filesInfo = getFileInfo(pieceId);
+    const auto filesInfo = getFilesInfoContainingPiece(pieceId);
 
     for (const auto& fileInfo : filesInfo)
     {
 
         unsigned int position;
 
-        if (fileInfo.firstPiece != pieceId)
+        if (fileInfo.firstPieceId != pieceId)
         {
-            position = (pieceId - fileInfo.firstPiece) * pieceSize - fileInfo.firstPieceOffset;
+            position = (pieceId - fileInfo.firstPieceId) * pieceSize - fileInfo.firstPieceOffset;
         }
         else
         {
@@ -118,7 +116,7 @@ void PieceRepositoryImpl::save(unsigned int pieceId, const std::basic_string<uns
 
         unsigned int lowerDataBoundary;
 
-        if (fileInfo.firstPiece == pieceId)
+        if (fileInfo.firstPieceId == pieceId)
         {
             lowerDataBoundary = fileInfo.firstPieceOffset;
         }
@@ -129,13 +127,13 @@ void PieceRepositoryImpl::save(unsigned int pieceId, const std::basic_string<uns
 
         unsigned int upperDataBoundary;
 
-        if (fileInfo.lastPiece == pieceId)
+        if (fileInfo.lastPieceId == pieceId)
         {
             upperDataBoundary = fileInfo.lastPieceOffset;
         }
         else
         {
-            upperDataBoundary = torrentFileInfo->pieceLength + 1;
+            upperDataBoundary = torrentFileInfo->pieceLength;
         }
 
         if (lowerDataBoundary == 0 && upperDataBoundary == torrentFileInfo->pieceLength)
@@ -171,19 +169,17 @@ bool PieceRepositoryImpl::contains(unsigned int pieceId) const
 {
     std::lock_guard<std::mutex> guard(lock);
 
-    const auto metadataFileContent = fileSystemService->read(absoluteMetadataFilePath);
+    const auto foundPieceIdIterator = std::find(downloadedPiecesIds.begin(), downloadedPiecesIds.end(), pieceId);
 
-    const auto piecesIds = piecesSerializer->deserialize(metadataFileContent);
-
-    return std::any_of(piecesIds.cbegin(), piecesIds.cend(), [&](unsigned int id) { return id == pieceId; });
+    return foundPieceIdIterator != downloadedPiecesIds.end();
 }
 
-const std::vector<FilePieceInfo> PieceRepositoryImpl::getFileInfo(unsigned int pieceId) const
+std::vector<FilePieceInfo> PieceRepositoryImpl::getFilesInfoContainingPiece(unsigned int pieceId) const
 {
     std::vector<FilePieceInfo> filesToSave;
-    for (const auto& fileInfo : filesInfo)
+    for (const auto& fileInfo : allFilesInfo)
     {
-        if (pieceId >= fileInfo.firstPiece && pieceId <= fileInfo.lastPiece)
+        if (pieceId >= fileInfo.firstPieceId && pieceId <= fileInfo.lastPieceId)
         {
             filesToSave.push_back(fileInfo);
         }
@@ -192,7 +188,7 @@ const std::vector<FilePieceInfo> PieceRepositoryImpl::getFileInfo(unsigned int p
     if (filesToSave.empty())
     {
         throw std::out_of_range{
-            fmt::format("PieceId out of range ({} out of {})", pieceId, filesInfo.end()->lastPiece)};
+            fmt::format("PieceId out of range ({} out of {})", pieceId, allFilesInfo.end()->lastPieceId)};
     }
 
     return filesToSave;

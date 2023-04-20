@@ -1,5 +1,6 @@
 #include "PeerToPeerSessionManager.h"
 
+#include <numeric>
 #include <utility>
 
 #include "fmt/format.h"
@@ -11,17 +12,16 @@ namespace core
 {
 namespace
 {
-const int refreshPeersTimeInSeconds{300};
+const int refreshPeersTimeInSeconds{60};
 }
 
 PeerToPeerSessionManager::PeerToPeerSessionManager(boost::asio::io_context& ioContext,
-                                                   libs::collection::ThreadSafeQueue<int>& piecesQueueInit,
-                                                   std::string peerIdInit,
+                                                   PieceQueueManager& piecesQueueManagerInit, std::string peerIdInit,
                                                    std::shared_ptr<TorrentFileInfo> torrentFileInfoInit,
                                                    std::shared_ptr<PieceRepository> pieceRepositoryInit,
                                                    std::unique_ptr<PeersRetriever> peersRetrieverInit)
     : context{ioContext},
-      piecesQueue{piecesQueueInit},
+      piecesQueueManager{piecesQueueManagerInit},
       peerId{std::move(peerIdInit)},
       torrentFileInfo{std::move(torrentFileInfoInit)},
       pieceRepository{std::move(pieceRepositoryInit)},
@@ -48,6 +48,27 @@ void PeerToPeerSessionManager::closeSession(const PeerEndpoint& peerEndpoint)
 
 void PeerToPeerSessionManager::refreshSessions()
 {
+    std::vector<int> iotaData(torrentFileInfo->piecesHashes.size());
+
+    std::iota(iotaData.begin(), iotaData.end(), 0);
+
+    std::set<int> piecesIds{iotaData.begin(), iotaData.end()};
+
+    const auto downloadedPiecesIds = pieceRepository->getDownloadedPieces();
+
+    for (const auto pieceId : downloadedPiecesIds)
+    {
+        piecesIds.erase(static_cast<int>(pieceId));
+    }
+
+    if (piecesIds.size() < 50)
+    {
+        for (const auto pieceId : piecesIds)
+        {
+            piecesQueueManager.addPieceIdoQueue(pieceId);
+        }
+    }
+
     for (const auto& announceUrl : torrentFileInfo->announceList)
     {
 
@@ -85,7 +106,7 @@ void PeerToPeerSessionManager::handleReceivedPeers(const std::vector<PeerEndpoin
         }
 
         sessions.insert(
-            {peerEndpoint, std::make_unique<PeerToPeerSessionImpl>(context, piecesQueue, peerEndpoint, peerId,
+            {peerEndpoint, std::make_unique<PeerToPeerSessionImpl>(context, piecesQueueManager, peerEndpoint, peerId,
                                                                    torrentFileInfo, pieceRepository, *this)});
 
         sessions.at(peerEndpoint)->startSession();
