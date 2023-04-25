@@ -1,6 +1,5 @@
 #include "PieceQueueManager.h"
 
-#include "collection/StlOperators.h"
 #include "loguru.hpp"
 
 namespace core
@@ -22,8 +21,6 @@ std::optional<int> PieceQueueManager::getPieceIdFromQueue() const
     if (piecesQueue.size() < 10)
     {
         const auto piecesIds = piecesQueue.popAll();
-
-        LOG_S(INFO) << piecesIds;
 
         for (const auto& pieceId : piecesIds)
         {

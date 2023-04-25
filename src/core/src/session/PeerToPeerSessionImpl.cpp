@@ -326,7 +326,6 @@ void PeerToPeerSessionImpl::handlePieceMessage(const Message& pieceMessage)
 
         if ((*pieceIndex == lastPiece) && (pieceBytesRead >= lastPieceSize) && not isValidHash)
         {
-            LOG_S(INFO) << "Zero padding bytes in last piece...";
             for (int i = pieceData.size(); i < torrentFileInfo->pieceLength; i++)
             {
                 pieceData += static_cast<unsigned char>(0);
